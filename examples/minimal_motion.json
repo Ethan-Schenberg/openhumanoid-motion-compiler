@@ -1,0 +1,54 @@
+{
+  "schema": "ohmc.motion_ir/v0.1",
+  "source": {
+    "kind": "synthetic",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "license": "CC0-1.0"
+  },
+  "robot": {
+    "profile": "generic_humanoid_v1",
+    "model_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "frames": {
+    "convention": "right_handed_x_forward_y_left_z_up",
+    "world": "world",
+    "base": "pelvis"
+  },
+  "trajectory": {
+    "rate_hz": 50,
+    "joints": ["left_hip_pitch", "left_knee_pitch"],
+    "samples": [
+      {
+        "time": 0.0,
+        "position_targets": [0.0, 0.0],
+        "solver_status": "solved",
+        "residual": 0.0
+      },
+      {
+        "time": 0.02,
+        "position_targets": [0.01, -0.02],
+        "solver_status": "solved",
+        "residual": 0.0001
+      }
+    ]
+  },
+  "contacts": [
+    {
+      "effector": "left_foot",
+      "intervals": [[0.0, 0.02]]
+    }
+  ],
+  "passes": [
+    {
+      "name": "synthetic_fixture",
+      "version": "0.1.0",
+      "config_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "warnings": []
+    }
+  ],
+  "validation": {
+    "status": "pass",
+    "issues": []
+  }
+}
+

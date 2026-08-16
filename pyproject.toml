@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openhumanoid-motion-compiler"
+version = "0.1.0.dev0"
+description = "Compile human motion into validated trajectories for humanoid robots."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [
+  { name = "OpenHumanoid Motion Compiler contributors" },
+]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = [
+  "jsonschema>=4.23,<5",
+  "PyYAML>=6,<7",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<9",
+]
+
+[project.scripts]
+ohmc = "ohmc.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Ethan-Schenberg/openhumanoid-motion-compiler"
+Documentation = "https://github.com/Ethan-Schenberg/openhumanoid-motion-compiler/tree/main/docs"
+Issues = "https://github.com/Ethan-Schenberg/openhumanoid-motion-compiler/issues"
+Source = "https://github.com/Ethan-Schenberg/openhumanoid-motion-compiler"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]

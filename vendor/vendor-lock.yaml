@@ -1,0 +1,46 @@
+schema: ohmc.vendor_lock/v0.1
+generated_at: "2026-08-16"
+
+vendors:
+  unitree:
+    components:
+      sdk2:
+        source: https://github.com/unitreerobotics/unitree_sdk2.git
+        revision: 21d0a3b2c46ee48c8fdf2783becb6be3beb0a59b
+        license: BSD-3-Clause
+        acquisition: git
+        redistribute: true
+      ros2:
+        source: https://github.com/unitreerobotics/unitree_ros2.git
+        revision: 668d1ec5a05d1c38d3306bdca7d59f2ba3581a88
+        license: BSD-3-Clause
+        acquisition: git
+        redistribute: true
+      mujoco:
+        source: https://github.com/unitreerobotics/unitree_mujoco.git
+        revision: ae6a8403e272733e9996ef59990880330496177f
+        license: BSD-3-Clause
+        acquisition: git
+        redistribute: true
+
+  agibot_x2:
+    components:
+      aimdk:
+        version: 1.0.0
+        source: https://x2-aimdk.agibot.com/zh-cn/latest/get_sdk/index.html
+        artifact_name: aimdk-aarch64-a424add7-artifacts.zip
+        sha256: 5bbcf724d54fb28f153db0d272f9acb7906bb1d2cac7dd7ccdc699a5c7eeab35
+        acquisition: official_download
+        license: unresolved
+        license_evidence: "Inspected ROS package.xml files contain TODO: License declaration"
+        redistribute: false
+      urdf:
+        version: 1.3.0
+        source: https://x2-aimdk.agibot.com/zh-cn/latest/_downloads/2ffc9785259556f409e385974a7a0461/X2_URDF-v1.3.0.zip
+        artifact_name: X2_URDF-v1.3.0.zip
+        sha256: e3e14a9631054a14659a2fb9445c4cec8224d88bd489b071bc9ea97853918bf0
+        acquisition: official_download
+        license: MIT
+        license_evidence: X2_URDF-v1.3.0/package.xml
+        redistribute: false
+        redistribution_note: "Enable after preserving complete MIT license and provenance notice in the vendored package"
