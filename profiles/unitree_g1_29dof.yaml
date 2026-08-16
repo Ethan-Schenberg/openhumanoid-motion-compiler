@@ -1,0 +1,136 @@
+schema: ohmc.robot_profile/v0.1
+id: unitree_g1_29dof_mujoco_v1
+vendor: Unitree
+model: G1 29DoF
+model_evidence:
+  kind: mjcf
+  source: https://github.com/unitreerobotics/unitree_mujoco/blob/ae6a8403e272733e9996ef59990880330496177f/unitree_robots/g1/g1_29dof.xml
+  version: ae6a8403e272733e9996ef59990880330496177f
+  model_sha256: 423e28bd718b19f7a65cda539b6f794ddbb268b4b9bdbd85f4bd982b30729617
+  license: BSD-3-Clause
+control:
+  authority: offline_model_only
+  hardware_transport: disabled
+  joint_order:
+    - left_hip_pitch_joint
+    - left_hip_roll_joint
+    - left_hip_yaw_joint
+    - left_knee_joint
+    - left_ankle_pitch_joint
+    - left_ankle_roll_joint
+    - right_hip_pitch_joint
+    - right_hip_roll_joint
+    - right_hip_yaw_joint
+    - right_knee_joint
+    - right_ankle_pitch_joint
+    - right_ankle_roll_joint
+    - waist_yaw_joint
+    - waist_roll_joint
+    - waist_pitch_joint
+    - left_shoulder_pitch_joint
+    - left_shoulder_roll_joint
+    - left_shoulder_yaw_joint
+    - left_elbow_joint
+    - left_wrist_roll_joint
+    - left_wrist_pitch_joint
+    - left_wrist_yaw_joint
+    - right_shoulder_pitch_joint
+    - right_shoulder_roll_joint
+    - right_shoulder_yaw_joint
+    - right_elbow_joint
+    - right_wrist_roll_joint
+    - right_wrist_pitch_joint
+    - right_wrist_yaw_joint
+  excluded_joints: []
+semantics:
+  left_hip_pitch: left_hip_pitch_joint
+  left_hip_roll: left_hip_roll_joint
+  left_hip_yaw: left_hip_yaw_joint
+  left_knee: left_knee_joint
+  left_ankle_pitch: left_ankle_pitch_joint
+  left_ankle_roll: left_ankle_roll_joint
+  right_hip_pitch: right_hip_pitch_joint
+  right_hip_roll: right_hip_roll_joint
+  right_hip_yaw: right_hip_yaw_joint
+  right_knee: right_knee_joint
+  right_ankle_pitch: right_ankle_pitch_joint
+  right_ankle_roll: right_ankle_roll_joint
+  waist_yaw: waist_yaw_joint
+  waist_roll: waist_roll_joint
+  waist_pitch: waist_pitch_joint
+  left_shoulder_pitch: left_shoulder_pitch_joint
+  left_shoulder_roll: left_shoulder_roll_joint
+  left_shoulder_yaw: left_shoulder_yaw_joint
+  left_elbow: left_elbow_joint
+  left_wrist_roll: left_wrist_roll_joint
+  left_wrist_pitch: left_wrist_pitch_joint
+  left_wrist_yaw: left_wrist_yaw_joint
+  right_shoulder_pitch: right_shoulder_pitch_joint
+  right_shoulder_roll: right_shoulder_roll_joint
+  right_shoulder_yaw: right_shoulder_yaw_joint
+  right_elbow: right_elbow_joint
+  right_wrist_roll: right_wrist_roll_joint
+  right_wrist_pitch: right_wrist_pitch_joint
+  right_wrist_yaw: right_wrist_yaw_joint
+joint_limits:
+  left_hip_pitch_joint: {lower: -2.5307, upper: 2.8798}
+  left_hip_roll_joint: {lower: -0.5236, upper: 2.9671}
+  left_hip_yaw_joint: {lower: -2.7576, upper: 2.7576}
+  left_knee_joint: {lower: -0.087267, upper: 2.8798}
+  left_ankle_pitch_joint: {lower: -0.87267, upper: 0.5236}
+  left_ankle_roll_joint: {lower: -0.2618, upper: 0.2618}
+  right_hip_pitch_joint: {lower: -2.5307, upper: 2.8798}
+  right_hip_roll_joint: {lower: -2.9671, upper: 0.5236}
+  right_hip_yaw_joint: {lower: -2.7576, upper: 2.7576}
+  right_knee_joint: {lower: -0.087267, upper: 2.8798}
+  right_ankle_pitch_joint: {lower: -0.87267, upper: 0.5236}
+  right_ankle_roll_joint: {lower: -0.2618, upper: 0.2618}
+  waist_yaw_joint: {lower: -2.618, upper: 2.618}
+  waist_roll_joint: {lower: -0.52, upper: 0.52}
+  waist_pitch_joint: {lower: -0.52, upper: 0.52}
+  left_shoulder_pitch_joint: {lower: -3.0892, upper: 2.6704}
+  left_shoulder_roll_joint: {lower: -1.5882, upper: 2.2515}
+  left_shoulder_yaw_joint: {lower: -2.618, upper: 2.618}
+  left_elbow_joint: {lower: -1.0472, upper: 2.0944}
+  left_wrist_roll_joint: {lower: -1.97222, upper: 1.97222}
+  left_wrist_pitch_joint: {lower: -1.61443, upper: 1.61443}
+  left_wrist_yaw_joint: {lower: -1.61443, upper: 1.61443}
+  right_shoulder_pitch_joint: {lower: -3.0892, upper: 2.6704}
+  right_shoulder_roll_joint: {lower: -2.2515, upper: 1.5882}
+  right_shoulder_yaw_joint: {lower: -2.618, upper: 2.618}
+  right_elbow_joint: {lower: -1.0472, upper: 2.0944}
+  right_wrist_roll_joint: {lower: -1.97222, upper: 1.97222}
+  right_wrist_pitch_joint: {lower: -1.61443, upper: 1.61443}
+  right_wrist_yaw_joint: {lower: -1.61443, upper: 1.61443}
+groups:
+  left_leg:
+    - left_hip_pitch_joint
+    - left_hip_roll_joint
+    - left_hip_yaw_joint
+    - left_knee_joint
+    - left_ankle_pitch_joint
+    - left_ankle_roll_joint
+  right_leg:
+    - right_hip_pitch_joint
+    - right_hip_roll_joint
+    - right_hip_yaw_joint
+    - right_knee_joint
+    - right_ankle_pitch_joint
+    - right_ankle_roll_joint
+  waist: [waist_yaw_joint, waist_roll_joint, waist_pitch_joint]
+  left_arm:
+    - left_shoulder_pitch_joint
+    - left_shoulder_roll_joint
+    - left_shoulder_yaw_joint
+    - left_elbow_joint
+    - left_wrist_roll_joint
+    - left_wrist_pitch_joint
+    - left_wrist_yaw_joint
+  right_arm:
+    - right_shoulder_pitch_joint
+    - right_shoulder_roll_joint
+    - right_shoulder_yaw_joint
+    - right_elbow_joint
+    - right_wrist_roll_joint
+    - right_wrist_pitch_joint
+    - right_wrist_yaw_joint

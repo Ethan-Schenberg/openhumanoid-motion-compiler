@@ -31,6 +31,11 @@ Every vendor backend advances through the same levels:
 
 v0.1 targets L3 for Unitree and at least L2 for AgiBot X2. The X2 target rises to L3 when the official model and simulation path are reproducibly packaged.
 
+Current implemented status (2026-08-16): both vendor profiles have reached L1.
+Their schemas, model hashes, joint orders, whitelists, limits, exclusions, and
+offline semantic mappings are tested in CI. SDK message adapters have not yet
+reached L2, and no hardware transport is present.
+
 ## Unitree integration
 
 The first implementation should support one humanoid reference model while keeping the SDK layer reusable across supported Unitree robots.
@@ -87,4 +92,3 @@ This design snapshot recorded the following exact inputs on 2026-08-16:
 - AgiBot X2 URDF v1.3.0 SHA-256: `e3e14a9631054a14659a2fb9445c4cec8224d88bd489b071bc9ea97853918bf0`
 
 These commits and checksums are inputs to the first prototype, not permanent claims about the newest upstream versions.
-

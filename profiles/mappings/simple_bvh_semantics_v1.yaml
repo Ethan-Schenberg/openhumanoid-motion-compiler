@@ -1,0 +1,9 @@
+schema: ohmc.semantic_map/v0.1
+id: simple_bvh_semantics_v1
+rules:
+  - source: Hips.z_rotation
+    target: waist_yaw
+    scale: 1.0
+  - source: LeftKnee.z_rotation
+    target: left_knee
+    scale: -1.0

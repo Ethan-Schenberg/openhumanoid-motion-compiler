@@ -10,6 +10,12 @@ from pathlib import Path
 from .bvh import bvh_to_motion_ir, load_bvh
 from .errors import OhmcError
 from .ir import load_json, validate_motion_ir
+from .profiles import (
+    load_yaml_object,
+    map_motion_ir,
+    validate_robot_profile,
+    validate_semantic_map,
+)
 from .replay import replay_mujoco
 from .vendor import (
     default_cache_dir,
@@ -69,6 +75,40 @@ def build_parser() -> argparse.ArgumentParser:
         "--schema",
         type=Path,
         default=default_project_root() / "schemas" / "motion-ir-v0.1.schema.json",
+    )
+
+    inspect_robot = subcommands.add_parser(
+        "inspect-robot", help="validate and summarize an offline robot profile"
+    )
+    inspect_robot.add_argument("profile", type=Path)
+    inspect_robot.add_argument(
+        "--profile-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "robot-profile-v0.1.schema.json",
+    )
+
+    map_joints = subcommands.add_parser(
+        "map-joints", help="apply an offline semantic joint map to Motion IR"
+    )
+    map_joints.add_argument("document", type=Path)
+    map_joints.add_argument("--robot", type=Path, required=True)
+    map_joints.add_argument("--mapping", type=Path, required=True)
+    map_joints.add_argument("--output", type=Path, required=True)
+    map_joints.add_argument("--force", action="store_true")
+    map_joints.add_argument(
+        "--schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "motion-ir-v0.1.schema.json",
+    )
+    map_joints.add_argument(
+        "--profile-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "robot-profile-v0.1.schema.json",
+    )
+    map_joints.add_argument(
+        "--mapping-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "semantic-map-v0.1.schema.json",
     )
 
     vendor = subcommands.add_parser("vendor", help="manage vendor SDK dependencies")
@@ -173,6 +213,54 @@ def run(args: argparse.Namespace) -> int:
         print(
             f"replay passed: {report['frames_replayed']} frames, "
             f"{report['joints_mapped']} joints, backend={report['backend']}"
+        )
+        return 0
+
+    if args.command == "inspect-robot":
+        profile = load_yaml_object(args.profile)
+        profile_schema = load_json(args.profile_schema)
+        issues = validate_robot_profile(profile, profile_schema)
+        if issues:
+            raise OhmcError("invalid robot profile: " + "; ".join(issues))
+        print(f"profile: {profile['id']}")
+        print(f"vendor: {profile['vendor']}")
+        print(f"model: {profile['model']}")
+        print(f"controllable_joints: {len(profile['control']['joint_order'])}")
+        print(f"excluded_joints: {len(profile['control']['excluded_joints'])}")
+        print(f"hardware_transport: {profile['control']['hardware_transport']}")
+        print(f"model_sha256: {profile['model_evidence']['model_sha256']}")
+        return 0
+
+    if args.command == "map-joints":
+        output = args.output.expanduser().resolve()
+        if output.exists() and not args.force:
+            raise OhmcError(f"refusing to overwrite existing output: {output}")
+        motion = load_json(args.document)
+        motion_schema = load_json(args.schema)
+        input_issues = validate_motion_ir(motion, motion_schema)
+        if input_issues:
+            raise OhmcError("cannot map invalid Motion IR: " + "; ".join(input_issues))
+        profile = load_yaml_object(args.robot)
+        profile_issues = validate_robot_profile(
+            profile, load_json(args.profile_schema)
+        )
+        if profile_issues:
+            raise OhmcError("invalid robot profile: " + "; ".join(profile_issues))
+        mapping = load_yaml_object(args.mapping)
+        mapping_issues = validate_semantic_map(
+            mapping, load_json(args.mapping_schema)
+        )
+        if mapping_issues:
+            raise OhmcError("invalid semantic map: " + "; ".join(mapping_issues))
+        mapped = map_motion_ir(motion, profile, mapping)
+        output_issues = validate_motion_ir(mapped, motion_schema)
+        if output_issues:
+            raise OhmcError("generated invalid Motion IR: " + "; ".join(output_issues))
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(mapped, indent=2) + "\n", encoding="utf-8")
+        print(
+            f"mapped Motion IR: {output} ({len(mapped['trajectory']['joints'])} joints, "
+            f"profile={profile['id']})"
         )
         return 0
 

@@ -75,6 +75,7 @@ Not included in v0.1:
 - [Project white paper](docs/WHITEPAPER.md)
 - [v0.1 architecture](docs/ARCHITECTURE_V0.1.md)
 - [Vendor SDK integration policy](docs/VENDOR_SDKS.md)
+- [Offline robot profiles](docs/ROBOT_PROFILES.md)
 - [Maintainers and governance](MAINTAINERS.md)
 
 ## Development quick start
@@ -124,6 +125,28 @@ The current backend maps Motion IR joints by exact name, enforces MuJoCo scalar
 joint limits, applies each sample, and runs `mj_forward` to reject non-finite
 kinematics. It does not open a viewer, simulate a controller, connect to ROS 2,
 or send hardware commands.
+
+Validate the two vendor-backed offline robot profiles and map the same source
+artifact into their declared joint contracts:
+
+```bash
+.venv/bin/ohmc inspect-robot profiles/unitree_g1_29dof.yaml
+.venv/bin/ohmc inspect-robot profiles/agibot_x2_ultra_aimdk_v1.yaml
+
+.venv/bin/ohmc map-joints build/simple_motion.json \
+  --robot profiles/unitree_g1_29dof.yaml \
+  --mapping profiles/mappings/simple_bvh_semantics_v1.yaml \
+  --output build/unitree_g1_motion.json
+
+.venv/bin/ohmc map-joints build/simple_motion.json \
+  --robot profiles/agibot_x2_ultra_aimdk_v1.yaml \
+  --mapping profiles/mappings/simple_bvh_semantics_v1.yaml \
+  --output build/agibot_x2_motion.json
+```
+
+Both profiles set `hardware_transport: disabled`. The current mapping example
+demonstrates deterministic joint ordering, sign conversion, and model-limit
+checks; it is not whole-body IK or a physical execution path.
 
 Inspect and verify vendor SDK dependencies:
 
@@ -194,7 +217,9 @@ Implemented foundation:
   import into schema-valid Motion IR.
 - Optional headless MuJoCo joint mapping and kinematic replay validation with a
   machine-readable report.
+- Schema-validated Unitree G1 29DoF and AgiBot X2 Ultra offline profiles with
+  explicit joint whitelists, exclusions, limits, and semantic mapping tests.
 
-Canonical root transforms, robot profiles, constrained IK compiler passes, and
-dynamic simulator playback are the next implementation milestones. Real-robot
-execution remains outside v0.1.
+Canonical root transforms, full-body semantic mapping, constrained IK compiler
+passes, and dynamic simulator playback are the next implementation milestones.
+Real-robot execution remains outside v0.1.

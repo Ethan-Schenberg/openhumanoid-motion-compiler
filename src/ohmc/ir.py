@@ -47,6 +47,8 @@ def validate_motion_ir(document: dict[str, Any], schema: dict[str, Any]) -> list
             continue
         timestamp = sample.get("time")
         positions = sample.get("position_targets")
+        velocities = sample.get("velocity_targets")
+        accelerations = sample.get("acceleration_targets")
         if isinstance(timestamp, (int, float)) and not isinstance(timestamp, bool):
             timestamp = float(timestamp)
             if not math.isfinite(timestamp):
@@ -57,21 +59,26 @@ def validate_motion_ir(document: dict[str, Any], schema: dict[str, Any]) -> list
                     f"the previous timestamp ({previous_time})"
                 )
             previous_time = timestamp
-        if isinstance(positions, list) and len(positions) != len(joints):
-            issues.append(
-                f"trajectory.samples.{index}.position_targets: expected {len(joints)} "
-                f"values for {len(joints)} joints, got {len(positions)}"
-            )
-        if isinstance(positions, list):
-            for position_index, value in enumerate(positions):
+        vectors = (
+            ("position_targets", positions),
+            ("velocity_targets", velocities),
+            ("acceleration_targets", accelerations),
+        )
+        for field, vector in vectors:
+            if isinstance(vector, list) and len(vector) != len(joints):
+                issues.append(
+                    f"trajectory.samples.{index}.{field}: expected {len(joints)} "
+                    f"values for {len(joints)} joints, got {len(vector)}"
+                )
+            if not isinstance(vector, list):
+                continue
+            for value_index, value in enumerate(vector):
                 if (
                     isinstance(value, (int, float))
                     and not isinstance(value, bool)
                     and not math.isfinite(float(value))
                 ):
                     issues.append(
-                        "trajectory.samples."
-                        f"{index}.position_targets.{position_index}: must be finite"
+                        f"trajectory.samples.{index}.{field}.{value_index}: must be finite"
                     )
     return issues
-

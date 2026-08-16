@@ -29,3 +29,14 @@ def test_semantic_validation_catches_joint_count_and_time_order() -> None:
     assert any("strictly greater" in issue for issue in issues)
     assert any("expected 2 values" in issue for issue in issues)
 
+
+def test_semantic_validation_checks_optional_vector_sizes() -> None:
+    schema = load(ROOT / "schemas" / "motion-ir-v0.1.schema.json")
+    motion = load(ROOT / "examples" / "minimal_motion.json")
+    motion["trajectory"]["samples"][0]["velocity_targets"] = [0.0]
+    motion["trajectory"]["samples"][0]["acceleration_targets"] = [0.0, 0.0]
+
+    issues = validate_motion_ir(motion, schema)
+
+    assert any("velocity_targets: expected 2 values" in issue for issue in issues)
+    assert not any("acceleration_targets: expected" in issue for issue in issues)

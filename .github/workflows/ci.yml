@@ -34,5 +34,11 @@ jobs:
           ohmc import-bvh examples/simple_motion.bvh --source-license CC0-1.0 --output build/simple_motion.json
           ohmc validate-ir build/simple_motion.json
           ohmc replay build/simple_motion.json --backend mujoco --model examples/simple_chain.xml --report build/replay-report.json
+          ohmc inspect-robot profiles/unitree_g1_29dof.yaml
+          ohmc inspect-robot profiles/agibot_x2_ultra_aimdk_v1.yaml
+          ohmc map-joints build/simple_motion.json --robot profiles/unitree_g1_29dof.yaml --mapping profiles/mappings/simple_bvh_semantics_v1.yaml --output build/unitree_g1_motion.json
+          ohmc map-joints build/simple_motion.json --robot profiles/agibot_x2_ultra_aimdk_v1.yaml --mapping profiles/mappings/simple_bvh_semantics_v1.yaml --output build/agibot_x2_motion.json
+          ohmc validate-ir build/unitree_g1_motion.json
+          ohmc validate-ir build/agibot_x2_motion.json
       - name: Validate vendor lock
         run: ohmc vendor --cache-dir .ohmc-cache status

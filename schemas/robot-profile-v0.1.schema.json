@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openhumanoid.dev/schemas/robot-profile-v0.1.schema.json",
+  "title": "OHMC Robot Profile v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "vendor",
+    "model",
+    "model_evidence",
+    "control",
+    "semantics",
+    "joint_limits",
+    "groups"
+  ],
+  "properties": {
+    "schema": { "const": "ohmc.robot_profile/v0.1" },
+    "id": { "type": "string", "minLength": 1 },
+    "vendor": { "type": "string", "minLength": 1 },
+    "model": { "type": "string", "minLength": 1 },
+    "model_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "source", "version", "model_sha256", "license"],
+      "properties": {
+        "kind": { "enum": ["mjcf", "urdf"] },
+        "source": { "type": "string", "format": "uri" },
+        "version": { "type": "string", "minLength": 1 },
+        "model_sha256": { "$ref": "#/$defs/sha256" },
+        "artifact_sha256": { "$ref": "#/$defs/sha256" },
+        "license": { "type": "string", "minLength": 1 },
+        "member": { "type": "string", "minLength": 1 }
+      }
+    },
+    "control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority", "hardware_transport", "joint_order", "excluded_joints"],
+      "properties": {
+        "authority": { "const": "offline_model_only" },
+        "hardware_transport": { "const": "disabled" },
+        "joint_order": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "excluded_joints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "reason"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "reason": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "semantics": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "joint_limits": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/jointLimit" }
+    },
+    "groups": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "uniqueItems": true,
+        "items": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "jointLimit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lower", "upper"],
+      "properties": {
+        "lower": { "type": "number" },
+        "upper": { "type": "number" },
+        "velocity": { "type": "number", "exclusiveMinimum": 0 },
+        "effort": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    }
+  }
+}
