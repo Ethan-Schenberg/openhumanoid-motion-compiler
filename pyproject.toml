@@ -29,6 +29,9 @@ dependencies = [
 dev = [
   "pytest>=8,<9",
 ]
+mujoco = [
+  "mujoco>=3.2,<4",
+]
 
 [project.scripts]
 ohmc = "ohmc.cli:main"

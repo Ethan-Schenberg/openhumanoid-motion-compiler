@@ -1,0 +1,30 @@
+<mujoco model="ohmc_bvh_channel_demo">
+  <compiler angle="radian"/>
+  <option timestep="0.002" gravity="0 0 0"/>
+  <worldbody>
+    <body name="hips_z_body" pos="0 0 1">
+      <joint name="Hips.z_rotation" type="hinge" axis="0 0 1" range="-3.141592653589793 3.141592653589793"/>
+      <geom type="capsule" fromto="0 0 0 0 0 0.12" size="0.035" mass="0.1"/>
+      <body name="hips_x_body" pos="0 0 0.12">
+        <joint name="Hips.x_rotation" type="hinge" axis="1 0 0" range="-3.141592653589793 3.141592653589793"/>
+        <geom type="capsule" fromto="0 0 0 0 0 0.12" size="0.035" mass="0.1"/>
+        <body name="hips_y_body" pos="0 0 0.12">
+          <joint name="Hips.y_rotation" type="hinge" axis="0 1 0" range="-3.141592653589793 3.141592653589793"/>
+          <geom type="capsule" fromto="0 0 0 0 0 -0.2" size="0.035" mass="0.1"/>
+          <body name="knee_z_body" pos="0 0 -0.2">
+            <joint name="LeftKnee.z_rotation" type="hinge" axis="0 0 1" range="-3.141592653589793 3.141592653589793"/>
+            <geom type="capsule" fromto="0 0 0 0 0 -0.12" size="0.03" mass="0.1"/>
+            <body name="knee_x_body" pos="0 0 -0.12">
+              <joint name="LeftKnee.x_rotation" type="hinge" axis="1 0 0" range="-3.141592653589793 3.141592653589793"/>
+              <geom type="capsule" fromto="0 0 0 0 0 -0.12" size="0.03" mass="0.1"/>
+              <body name="knee_y_body" pos="0 0 -0.12">
+                <joint name="LeftKnee.y_rotation" type="hinge" axis="0 1 0" range="-3.141592653589793 3.141592653589793"/>
+                <geom type="capsule" fromto="0 0 0 0 0 -0.2" size="0.03" mass="0.1"/>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+</mujoco>

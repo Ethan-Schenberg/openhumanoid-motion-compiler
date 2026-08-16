@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
+from .bvh import bvh_to_motion_ir, load_bvh
 from .errors import OhmcError
 from .ir import load_json, validate_motion_ir
+from .replay import replay_mujoco
 from .vendor import (
     default_cache_dir,
     import_official_artifact,
@@ -28,6 +31,41 @@ def build_parser() -> argparse.ArgumentParser:
     validate_ir = subcommands.add_parser("validate-ir", help="validate Motion IR")
     validate_ir.add_argument("document", type=Path)
     validate_ir.add_argument(
+        "--schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "motion-ir-v0.1.schema.json",
+    )
+
+    inspect_source = subcommands.add_parser(
+        "inspect-source", help="inspect a BVH source without compiling it"
+    )
+    inspect_source.add_argument("document", type=Path)
+
+    import_bvh = subcommands.add_parser(
+        "import-bvh", help="import BVH rotation channels into prototype Motion IR"
+    )
+    import_bvh.add_argument("document", type=Path)
+    import_bvh.add_argument("--output", type=Path, required=True)
+    import_bvh.add_argument(
+        "--source-license",
+        required=True,
+        help="SPDX identifier or other explicit license assertion for the BVH source",
+    )
+    import_bvh.add_argument("--force", action="store_true")
+    import_bvh.add_argument(
+        "--schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "motion-ir-v0.1.schema.json",
+    )
+
+    replay = subcommands.add_parser(
+        "replay", help="perform offline replay validation of Motion IR"
+    )
+    replay.add_argument("document", type=Path)
+    replay.add_argument("--backend", choices=["mujoco"], required=True)
+    replay.add_argument("--model", type=Path, required=True)
+    replay.add_argument("--report", type=Path)
+    replay.add_argument(
         "--schema",
         type=Path,
         default=default_project_root() / "schemas" / "motion-ir-v0.1.schema.json",
@@ -82,6 +120,62 @@ def run(args: argparse.Namespace) -> int:
         print(f"valid Motion IR: {args.document}")
         return 0
 
+    if args.command == "inspect-source":
+        motion = load_bvh(args.document)
+        print(f"source: {args.document}")
+        print(f"joints: {len(motion.joints)}")
+        print(f"channels: {len(motion.channel_bindings)}")
+        print(f"frames: {len(motion.frames)}")
+        print(f"frame_time_seconds: {motion.frame_time:.9g}")
+        print(f"duration_seconds: {motion.duration:.9g}")
+        return 0
+
+    if args.command == "import-bvh":
+        output = args.output.expanduser().resolve()
+        if output.exists() and not args.force:
+            raise OhmcError(f"refusing to overwrite existing output: {output}")
+        source = args.document.expanduser().resolve()
+        try:
+            source_bytes = source.read_bytes()
+        except FileNotFoundError as exc:
+            raise OhmcError(f"file not found: {source}") from exc
+        motion = load_bvh(source)
+        document = bvh_to_motion_ir(
+            motion,
+            source_bytes=source_bytes,
+            source_name=args.document.name,
+            source_license=args.source_license,
+        )
+        schema = load_json(args.schema)
+        issues = validate_motion_ir(document, schema)
+        if issues:
+            raise OhmcError("generated invalid Motion IR: " + "; ".join(issues))
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+        print(f"imported BVH Motion IR: {output}")
+        return 0
+
+    if args.command == "replay":
+        document = load_json(args.document)
+        schema = load_json(args.schema)
+        issues = validate_motion_ir(document, schema)
+        if issues:
+            raise OhmcError("cannot replay invalid Motion IR: " + "; ".join(issues))
+        if args.backend == "mujoco":
+            report = replay_mujoco(document, args.model.expanduser().resolve())
+        else:  # pragma: no cover - argparse restricts the value
+            raise OhmcError(f"unsupported replay backend: {args.backend}")
+        if args.report:
+            report_path = args.report.expanduser().resolve()
+            report_path.parent.mkdir(parents=True, exist_ok=True)
+            report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+            print(f"replay report: {report_path}")
+        print(
+            f"replay passed: {report['frames_replayed']} frames, "
+            f"{report['joints_mapped']} joints, backend={report['backend']}"
+        )
+        return 0
+
     lock = load_vendor_lock(args.lock)
     cache_dir = args.cache_dir.expanduser().resolve()
     if args.vendor_command == "status":
@@ -113,4 +207,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

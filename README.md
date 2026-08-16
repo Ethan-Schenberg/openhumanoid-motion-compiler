@@ -92,6 +92,39 @@ Validate the reference Motion IR artifact:
 .venv/bin/ohmc validate-ir examples/minimal_motion.json
 ```
 
+Inspect the synthetic CC0 BVH fixture and import its ordered rotation channels
+into a prototype Motion IR artifact:
+
+```bash
+.venv/bin/ohmc inspect-source examples/simple_motion.bvh
+.venv/bin/ohmc import-bvh examples/simple_motion.bvh \
+  --source-license CC0-1.0 \
+  --output build/simple_motion.json
+.venv/bin/ohmc validate-ir build/simple_motion.json
+```
+
+The importer converts BVH rotation values from degrees to radians and records
+the source hash, timing, channel order, configuration hash, skipped translation
+channels, and the fact that canonical axis remapping is still pending. This
+ingestion artifact is deliberately labelled with the
+`bvh_rotation_channels_v1` prototype profile: it is not yet an IK-retargeted
+robot trajectory and cannot command hardware.
+
+Install the optional MuJoCo dependency and run a headless kinematic replay:
+
+```bash
+.venv/bin/python -m pip install -e '.[mujoco]'
+.venv/bin/ohmc replay build/simple_motion.json \
+  --backend mujoco \
+  --model examples/simple_chain.xml \
+  --report build/replay-report.json
+```
+
+The current backend maps Motion IR joints by exact name, enforces MuJoCo scalar
+joint limits, applies each sample, and runs `mj_forward` to reject non-finite
+kinematics. It does not open a viewer, simulate a controller, connect to ROS 2,
+or send hardware commands.
+
 Inspect and verify vendor SDK dependencies:
 
 ```bash
@@ -157,5 +190,11 @@ Implemented foundation:
 - SHA-256 verified import for official AgiBot X2 artifacts.
 - Pinned Git synchronization for Unitree SDK2, ROS 2, and MuJoCo repositories.
 - Automated tests for Motion IR semantics and artifact integrity.
+- Strict BVH hierarchy/channel/frame parsing plus deterministic rotation-channel
+  import into schema-valid Motion IR.
+- Optional headless MuJoCo joint mapping and kinematic replay validation with a
+  machine-readable report.
 
-The BVH frontend, robot profiles, constrained IK compiler passes, and simulator replay backend are the next implementation milestones. Real-robot execution remains outside v0.1.
+Canonical root transforms, robot profiles, constrained IK compiler passes, and
+dynamic simulator playback are the next implementation milestones. Real-robot
+execution remains outside v0.1.
