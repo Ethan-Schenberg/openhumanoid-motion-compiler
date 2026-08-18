@@ -34,13 +34,16 @@ jobs:
           ohmc canonicalize-bvh examples/simple_motion.bvh --source-license CC0-1.0 --source-convention right_handed_x_right_y_up_z_backward --source-length-unit m --output build/canonical-motion.json
           ohmc import-bvh examples/simple_motion.bvh --source-license CC0-1.0 --output build/simple_motion.json
           ohmc validate-ir build/simple_motion.json
+          ohmc derive-kinematics build/simple_motion.json --output build/simple_motion_kinematics.json
           ohmc replay build/simple_motion.json --backend mujoco --model examples/simple_chain.xml --report build/replay-report.json
           ohmc inspect-robot profiles/unitree_g1_29dof.yaml
           ohmc inspect-robot profiles/agibot_x2_ultra_aimdk_v1.yaml
-          ohmc map-joints build/simple_motion.json --robot profiles/unitree_g1_29dof.yaml --mapping profiles/mappings/simple_bvh_semantics_v1.yaml --output build/unitree_g1_motion.json
-          ohmc map-joints build/simple_motion.json --robot profiles/agibot_x2_ultra_aimdk_v1.yaml --mapping profiles/mappings/simple_bvh_semantics_v1.yaml --output build/agibot_x2_motion.json
+          ohmc map-joints build/simple_motion_kinematics.json --robot profiles/unitree_g1_29dof.yaml --mapping profiles/mappings/simple_bvh_semantics_v1.yaml --output build/unitree_g1_motion.json
+          ohmc map-joints build/simple_motion_kinematics.json --robot profiles/agibot_x2_ultra_aimdk_v1.yaml --mapping profiles/mappings/simple_bvh_semantics_v1.yaml --output build/agibot_x2_motion.json
           ohmc validate-ir build/unitree_g1_motion.json
           ohmc validate-ir build/agibot_x2_motion.json
+          ohmc quality-report build/unitree_g1_motion.json --robot profiles/unitree_g1_29dof.yaml --output build/unitree_g1_quality.json
+          ohmc quality-report build/agibot_x2_motion.json --robot profiles/agibot_x2_ultra_aimdk_v1.yaml --output build/agibot_x2_quality.json
           ohmc encode-fixture build/unitree_g1_motion.json --robot profiles/unitree_g1_29dof.yaml --adapter unitree-g1-lowcmd --output build/unitree_g1_lowcmd_fixture.json
           ohmc encode-fixture build/agibot_x2_motion.json --robot profiles/agibot_x2_ultra_aimdk_v1.yaml --adapter agibot-x2-joint-command-array --output build/agibot_x2_joint_command_fixture.json
           ohmc simulate examples/simple_motion.bvh --target unitree-g1-contract-fixture --source-license CC0-1.0 --source-convention right_handed_x_right_y_up_z_backward --source-length-unit m --output build/one-click-smoke --cache-dir .ohmc-cache

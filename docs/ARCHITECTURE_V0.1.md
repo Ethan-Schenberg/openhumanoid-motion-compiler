@@ -136,6 +136,10 @@ Responsibilities:
 - Check position, velocity, acceleration, and configured collision constraints.
 - Calculate contact drift and kinematic residuals.
 - Produce JSON and human-readable reports.
+- Derive velocity and acceleration with deterministic non-uniform timestamp
+  stencils before applying configured dynamic limits.
+- Report mapped, missing, and unknown controllable joints without treating
+  absent profile limits as passed checks.
 
 ### `ohmc.backends.mujoco`
 
@@ -190,10 +194,12 @@ Initial commands:
 ```text
 ohmc inspect-source INPUT.bvh
 ohmc canonicalize-bvh INPUT.bvh --source-convention CONVENTION --source-length-unit UNIT --source-license SPDX --output canonical.json
+ohmc derive-kinematics motion.json --output motion-with-derivatives.json
 ohmc inspect-robot PROFILE.yaml
 ohmc simulate INPUT.bvh --target TARGET --source-license SPDX --source-convention CONVENTION --source-length-unit UNIT --output BUILD_DIR
 ohmc validate-ir BUILD_DIR/motion.json
 ohmc replay BUILD_DIR/motion.json --backend mujoco
+ohmc quality-report BUILD_DIR/motion.json --robot PROFILE.yaml --output BUILD_DIR/quality-report.json
 ohmc report BUILD_DIR/report.json
 ohmc vendor status
 ohmc vendor sync unitree
@@ -249,6 +255,7 @@ build/example/
   motion.source.json
   motion.json
   replay-report.json
+  quality-report.json
   interface-fixture.json
   configs/
     robot-profile.yaml
@@ -256,7 +263,8 @@ build/example/
 ```
 
 The v0.2 prototype currently emits `manifest.json`, source/mapped Motion IR,
-replay report, interface fixture, and copied profile/mapping configuration.
+canonical motion, trajectory-quality and replay reports, interface fixture,
+and copied profile/mapping configuration.
 Dedicated provenance and pass-log files remain planned; provenance hashes and
 pass records currently live in the manifest and Motion IR respectively.
 

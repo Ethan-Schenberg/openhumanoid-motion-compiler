@@ -35,13 +35,18 @@ verification, offline adapter fixtures, and headless MuJoCo replay. The new
 `ohmc simulate` command now composes those pieces into an atomic evidence
 bundle and resolves official models from the verified vendor cache.
 
+Trajectory derivatives and quality reports now expose position/dynamic-limit
+violations, missing limits, and exact controllable-joint coverage. Strict CLI
+gates can reject incomplete mapping or dynamic-limit evidence.
+
 The largest technical gaps are not packaging gaps. They are motion-quality and
 validation gaps:
 
 - Current mapping covers named rotation channels, not canonical full-body IK.
 - Replay is kinematic `mj_forward`, not actuator/controller dynamics.
-- Foot contacts, balance, self-collision, velocity, and acceleration are not yet
-  enforced as compiler gates.
+- Foot contacts, balance, and self-collision are not yet enforced. Velocity and
+  acceleration are derived and checked wherever profiles declare limits;
+  missing limits remain explicit warnings.
 - No rendered comparison video or benchmark dashboard exists.
 - Vendor interface fixtures are structural JSON contracts; the real SDK/ROS 2
   message adapters do not yet compile in the CI matrix.
@@ -114,12 +119,12 @@ validation gaps:
 
 The next implementation order is:
 
-1. Velocity and acceleration validator derived from timestamps.
-2. Full-body profile mapping completeness report.
-3. Morphology scaling and deterministic timeline resampling.
-4. Solver-neutral IK problem contract and a small deterministic reference
+1. Morphology scaling and deterministic timeline resampling.
+2. Solver-neutral IK problem contract and a small deterministic reference
    solver.
-5. Contact-aware dynamic replay metrics.
+3. Canonical landmark-to-robot task mapping for full-body IK.
+4. Contact-aware dynamic replay metrics.
+5. Side-by-side rendered regression evidence.
 
 This order improves the mathematical core before adding presentation layers,
 so future rendered demos remain auditable rather than becoming disconnected

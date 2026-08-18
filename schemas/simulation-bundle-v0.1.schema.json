@@ -23,10 +23,16 @@
     "result": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["replay", "motion_validation", "hardware_commands_sent"],
+      "required": [
+        "replay",
+        "motion_validation",
+        "motion_quality",
+        "hardware_commands_sent"
+      ],
       "properties": {
         "replay": { "const": "pass" },
         "motion_validation": { "enum": ["pass", "warning", "fail"] },
+        "motion_quality": { "enum": ["pass", "warning"] },
         "hardware_commands_sent": { "const": false }
       }
     },
@@ -36,6 +42,8 @@
       "required": [
         "semantic_joint_mapping",
         "canonical_source_kinematics",
+        "trajectory_derivatives",
+        "mapping_completeness_report",
         "headless_kinematic_replay",
         "vendor_interface_fixture",
         "constrained_whole_body_ik",
@@ -44,6 +52,8 @@
       ],
       "properties": {
         "canonical_source_kinematics": { "type": "boolean" },
+        "trajectory_derivatives": { "type": "boolean" },
+        "mapping_completeness_report": { "type": "boolean" },
         "semantic_joint_mapping": { "type": "boolean" },
         "headless_kinematic_replay": { "type": "boolean" },
         "vendor_interface_fixture": { "type": "boolean" },
@@ -80,6 +90,7 @@
         "canonical_motion",
         "motion",
         "replay_report",
+        "quality_report",
         "interface_fixture",
         "robot_profile",
         "semantic_mapping"
@@ -89,6 +100,7 @@
         "source_motion": { "$ref": "#/$defs/artifact" },
         "motion": { "$ref": "#/$defs/artifact" },
         "replay_report": { "$ref": "#/$defs/artifact" },
+        "quality_report": { "$ref": "#/$defs/artifact" },
         "interface_fixture": { "$ref": "#/$defs/artifact" },
         "robot_profile": { "$ref": "#/$defs/artifact" },
         "semantic_mapping": { "$ref": "#/$defs/artifact" }

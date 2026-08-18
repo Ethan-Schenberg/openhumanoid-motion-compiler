@@ -25,6 +25,11 @@ from .profiles import (
     validate_robot_profile,
     validate_semantic_map,
 )
+from .quality import (
+    derive_motion_kinematics,
+    trajectory_quality_report,
+    validate_quality_report,
+)
 from .replay import replay_mujoco
 from .simulation import build_simulation_bundle
 from .vendor import (
@@ -101,6 +106,19 @@ def build_parser() -> argparse.ArgumentParser:
         default=default_project_root() / "schemas" / "motion-ir-v0.1.schema.json",
     )
 
+    derive_kinematics = subcommands.add_parser(
+        "derive-kinematics",
+        help="derive velocity and acceleration targets from Motion IR timestamps",
+    )
+    derive_kinematics.add_argument("document", type=Path)
+    derive_kinematics.add_argument("--output", type=Path, required=True)
+    derive_kinematics.add_argument("--force", action="store_true")
+    derive_kinematics.add_argument(
+        "--schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "motion-ir-v0.1.schema.json",
+    )
+
     replay = subcommands.add_parser(
         "replay", help="perform offline replay validation of Motion IR"
     )
@@ -122,6 +140,33 @@ def build_parser() -> argparse.ArgumentParser:
         "--profile-schema",
         type=Path,
         default=default_project_root() / "schemas" / "robot-profile-v0.1.schema.json",
+    )
+
+    quality_report = subcommands.add_parser(
+        "quality-report",
+        help="measure mapping coverage and enforce robot trajectory limits",
+    )
+    quality_report.add_argument("document", type=Path)
+    quality_report.add_argument("--robot", type=Path, required=True)
+    quality_report.add_argument("--output", type=Path, required=True)
+    quality_report.add_argument("--require-complete-mapping", action="store_true")
+    quality_report.add_argument("--require-dynamic-limits", action="store_true")
+    quality_report.add_argument(
+        "--schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "motion-ir-v0.1.schema.json",
+    )
+    quality_report.add_argument(
+        "--profile-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "robot-profile-v0.1.schema.json",
+    )
+    quality_report.add_argument(
+        "--report-schema",
+        type=Path,
+        default=default_project_root()
+        / "schemas"
+        / "trajectory-quality-v0.1.schema.json",
     )
 
     map_joints = subcommands.add_parser(
@@ -266,6 +311,13 @@ def build_parser() -> argparse.ArgumentParser:
         / "schemas"
         / "canonical-motion-v0.1.schema.json",
     )
+    simulate.add_argument(
+        "--quality-schema",
+        type=Path,
+        default=default_project_root()
+        / "schemas"
+        / "trajectory-quality-v0.1.schema.json",
+    )
 
     vendor = subcommands.add_parser("vendor", help="manage vendor SDK dependencies")
     vendor.add_argument(
@@ -407,6 +459,29 @@ def run(args: argparse.Namespace) -> int:
         print(f"imported BVH Motion IR: {output}")
         return 0
 
+    if args.command == "derive-kinematics":
+        output = args.output.expanduser().resolve()
+        if output.exists() and not args.force:
+            raise OhmcError(f"refusing to overwrite existing output: {output}")
+        document = load_json(args.document)
+        schema = load_json(args.schema)
+        issues = validate_motion_ir(document, schema)
+        if issues:
+            raise OhmcError("cannot derive invalid Motion IR: " + "; ".join(issues))
+        derived = derive_motion_kinematics(document)
+        output_issues = validate_motion_ir(derived, schema)
+        if output_issues:
+            raise OhmcError(
+                "generated invalid derived Motion IR: " + "; ".join(output_issues)
+            )
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(derived, indent=2) + "\n", encoding="utf-8")
+        print(
+            f"derived kinematics: {output} "
+            f"({len(derived['trajectory']['samples'])} samples)"
+        )
+        return 0
+
     if args.command == "replay":
         document = load_json(args.document)
         schema = load_json(args.schema)
@@ -442,6 +517,52 @@ def run(args: argparse.Namespace) -> int:
         print(f"hardware_transport: {profile['control']['hardware_transport']}")
         print(f"model_sha256: {profile['model_evidence']['model_sha256']}")
         return 0
+
+    if args.command == "quality-report":
+        motion = load_json(args.document)
+        motion_issues = validate_motion_ir(motion, load_json(args.schema))
+        if motion_issues:
+            raise OhmcError("cannot analyze invalid Motion IR: " + "; ".join(motion_issues))
+        profile = load_yaml_object(args.robot)
+        profile_issues = validate_robot_profile(
+            profile, load_json(args.profile_schema)
+        )
+        if profile_issues:
+            raise OhmcError("invalid robot profile: " + "; ".join(profile_issues))
+        report = trajectory_quality_report(motion, profile)
+        report_issues = validate_quality_report(
+            report, load_json(args.report_schema)
+        )
+        if report_issues:
+            raise OhmcError(
+                "generated invalid quality report: " + "; ".join(report_issues)
+            )
+        output = args.output.expanduser().resolve()
+        if output.exists():
+            raise OhmcError(f"refusing to overwrite existing output: {output}")
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        mapping = report["mapping"]
+        print(
+            f"trajectory quality: {report['status']} "
+            f"({mapping['mapped_joint_count']}/{mapping['controllable_joint_count']} "
+            f"joints, {len(report['violations'])} violations)"
+        )
+        dynamic = report["dynamic_limit_coverage"]
+        strict_failure = (
+            report["status"] == "fail"
+            or (args.require_complete_mapping and not mapping["complete"])
+            or (
+                args.require_dynamic_limits
+                and (
+                    dynamic["velocity_configured_joint_count"]
+                    != dynamic["mapped_joint_count"]
+                    or dynamic["acceleration_configured_joint_count"]
+                    != dynamic["mapped_joint_count"]
+                )
+            )
+        )
+        return 1 if strict_failure else 0
 
     if args.command == "map-joints":
         output = args.output.expanduser().resolve()
@@ -527,6 +648,7 @@ def run(args: argparse.Namespace) -> int:
             canonical_schema_path=args.canonical_schema,
             source_convention=args.source_convention,
             source_length_unit=args.source_length_unit,
+            quality_schema_path=args.quality_schema,
         )
         print(
             f"simulation bundle: {args.output.expanduser().resolve()} "

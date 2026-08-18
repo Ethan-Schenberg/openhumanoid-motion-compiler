@@ -101,9 +101,10 @@ non-executable adapter contract:
 ```
 
 The command emits an atomic, hash-addressed evidence bundle containing
-canonical skeleton motion, source and mapped Motion IR, copied resolved
-configuration, a replay report, a vendor interface fixture, and
-`manifest.json`. It refuses to overwrite an existing build directory.
+canonical skeleton motion, source and mapped Motion IR, derived velocity and
+acceleration, a trajectory-quality report, copied resolved configuration, a
+replay report, a vendor interface fixture, and `manifest.json`. It refuses to
+overwrite an existing build directory.
 
 After resolving the pinned vendor dependencies, the same command replays
 against the official Unitree G1 29DoF or AgiBot X2 Ultra MuJoCo model:
@@ -152,6 +153,8 @@ into a prototype Motion IR artifact:
 .venv/bin/ohmc import-bvh examples/simple_motion.bvh \
   --source-license CC0-1.0 \
   --output build/simple_motion.json
+.venv/bin/ohmc derive-kinematics build/simple_motion.json \
+  --output build/simple_motion_kinematics.json
 .venv/bin/ohmc validate-ir build/simple_motion.json
 ```
 
@@ -168,6 +171,19 @@ skipped translation channels, and the fact that this prototype joint-vector
 path has not consumed canonical transforms yet. It is deliberately labelled
 with the `bvh_rotation_channels_v1` prototype profile: it is not yet an
 IK-retargeted robot trajectory and cannot command hardware.
+
+After semantic mapping, generate the machine-readable quality report:
+
+```bash
+.venv/bin/ohmc quality-report build/unitree_g1_motion.json \
+  --robot profiles/unitree_g1_29dof.yaml \
+  --output build/unitree_g1_quality.json
+```
+
+The report distinguishes actual violations, missing dynamic limits, and
+incomplete joint coverage. `--require-complete-mapping` and
+`--require-dynamic-limits` make those missing guarantees fail the command while
+preserving the report. See [trajectory quality gates](docs/QUALITY_GATES.md).
 
 Install the optional MuJoCo dependency and run a headless kinematic replay:
 
@@ -191,12 +207,12 @@ artifact into their declared joint contracts:
 .venv/bin/ohmc inspect-robot profiles/unitree_g1_29dof.yaml
 .venv/bin/ohmc inspect-robot profiles/agibot_x2_ultra_aimdk_v1.yaml
 
-.venv/bin/ohmc map-joints build/simple_motion.json \
+.venv/bin/ohmc map-joints build/simple_motion_kinematics.json \
   --robot profiles/unitree_g1_29dof.yaml \
   --mapping profiles/mappings/simple_bvh_semantics_v1.yaml \
   --output build/unitree_g1_motion.json
 
-.venv/bin/ohmc map-joints build/simple_motion.json \
+.venv/bin/ohmc map-joints build/simple_motion_kinematics.json \
   --robot profiles/agibot_x2_ultra_aimdk_v1.yaml \
   --mapping profiles/mappings/simple_bvh_semantics_v1.yaml \
   --output build/agibot_x2_motion.json
@@ -299,6 +315,8 @@ Implemented foundation:
   tests and pinned official Unitree G1/AgiBot X2 Ultra models.
 - Canonical BVH skeleton evaluation with explicit source axes/units, ordered
   local rotations, metre offsets, quaternions, and deterministic world poses.
+- Non-uniform timestamp velocity/acceleration derivation, profile limit checks,
+  and explicit per-robot mapping-completeness reports with strict CLI gates.
 
 Canonical root transforms, full-body semantic mapping, constrained IK compiler
 passes, dynamic simulator playback, and rendered comparison video are the next

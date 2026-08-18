@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openhumanoid.dev/schemas/trajectory-quality-v0.1.schema.json",
+  "title": "OHMC trajectory quality report v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "robot_profile",
+    "configuration",
+    "summary",
+    "mapping",
+    "dynamic_limit_coverage",
+    "joint_metrics",
+    "violations",
+    "warnings",
+    "status",
+    "hardware_commands_sent"
+  ],
+  "properties": {
+    "schema": { "const": "ohmc.trajectory_quality/v0.1" },
+    "robot_profile": { "type": "string", "minLength": 1 },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["limit_absolute_tolerance"],
+      "properties": {
+        "limit_absolute_tolerance": { "type": "number", "minimum": 0 }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["joint_count", "sample_count", "duration_seconds"],
+      "properties": {
+        "joint_count": { "type": "integer", "minimum": 1 },
+        "sample_count": { "type": "integer", "minimum": 1 },
+        "duration_seconds": { "type": "number", "minimum": 0 }
+      }
+    },
+    "mapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "complete",
+        "coverage_ratio",
+        "mapped_joint_count",
+        "controllable_joint_count",
+        "mapped_joints",
+        "missing_joints",
+        "unknown_joints"
+      ],
+      "properties": {
+        "complete": { "type": "boolean" },
+        "coverage_ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "mapped_joint_count": { "type": "integer", "minimum": 0 },
+        "controllable_joint_count": { "type": "integer", "minimum": 1 },
+        "mapped_joints": { "$ref": "#/$defs/names" },
+        "missing_joints": { "$ref": "#/$defs/names" },
+        "unknown_joints": { "$ref": "#/$defs/names" }
+      }
+    },
+    "dynamic_limit_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "velocity_configured_joint_count",
+        "acceleration_configured_joint_count",
+        "mapped_joint_count"
+      ],
+      "properties": {
+        "velocity_configured_joint_count": { "type": "integer", "minimum": 0 },
+        "acceleration_configured_joint_count": { "type": "integer", "minimum": 0 },
+        "mapped_joint_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "joint_metrics": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/jointMetric" }
+    },
+    "violations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/violation" }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "status": { "enum": ["pass", "warning", "fail"] },
+    "hardware_commands_sent": { "const": false }
+  },
+  "$defs": {
+    "names": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "optionalPositiveNumber": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "number", "exclusiveMinimum": 0 }
+      ]
+    },
+    "limitStatus": { "enum": ["pass", "fail", "not_configured"] },
+    "jointMetric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "joint",
+        "minimum_position",
+        "maximum_position",
+        "minimum_position_margin",
+        "maximum_absolute_velocity",
+        "velocity_limit",
+        "velocity_status",
+        "maximum_absolute_acceleration",
+        "acceleration_limit",
+        "acceleration_status"
+      ],
+      "properties": {
+        "joint": { "type": "string", "minLength": 1 },
+        "minimum_position": { "type": "number" },
+        "maximum_position": { "type": "number" },
+        "minimum_position_margin": { "type": "number" },
+        "maximum_absolute_velocity": { "type": "number", "minimum": 0 },
+        "velocity_limit": { "$ref": "#/$defs/optionalPositiveNumber" },
+        "velocity_status": { "$ref": "#/$defs/limitStatus" },
+        "maximum_absolute_acceleration": { "type": "number", "minimum": 0 },
+        "acceleration_limit": { "$ref": "#/$defs/optionalPositiveNumber" },
+        "acceleration_status": { "$ref": "#/$defs/limitStatus" }
+      }
+    },
+    "violation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "joint", "sample_index", "value", "limit"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "unknown_joint",
+            "position_lower",
+            "position_upper",
+            "velocity",
+            "acceleration"
+          ]
+        },
+        "joint": { "type": "string", "minLength": 1 },
+        "sample_index": {
+          "oneOf": [{ "type": "null" }, { "type": "integer", "minimum": 0 }]
+        },
+        "value": { "oneOf": [{ "type": "null" }, { "type": "number" }] },
+        "limit": { "oneOf": [{ "type": "null" }, { "type": "number" }] }
+      }
+    }
+  }
+}

@@ -95,6 +95,7 @@
         "lower": { "type": "number" },
         "upper": { "type": "number" },
         "velocity": { "type": "number", "exclusiveMinimum": 0 },
+        "acceleration": { "type": "number", "exclusiveMinimum": 0 },
         "effort": { "type": "number", "exclusiveMinimum": 0 }
       }
     }

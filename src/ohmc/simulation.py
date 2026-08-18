@@ -24,6 +24,11 @@ from .profiles import (
     validate_robot_profile,
     validate_semantic_map,
 )
+from .quality import (
+    derive_motion_kinematics,
+    trajectory_quality_report,
+    validate_quality_report,
+)
 from .replay import replay_mujoco
 from .vendor import (
     Component,
@@ -219,6 +224,7 @@ def build_simulation_bundle(
     canonical_schema_path: Path,
     source_convention: str,
     source_length_unit: str,
+    quality_schema_path: Path,
 ) -> dict[str, Any]:
     """Compile, map, replay, and encode an offline evidence bundle atomically."""
     output_dir = output_dir.expanduser().resolve()
@@ -267,11 +273,13 @@ def build_simulation_bundle(
         raise OhmcError(
             "generated invalid canonical motion: " + "; ".join(canonical_issues)
         )
-    source_motion = bvh_to_motion_ir(
-        bvh_motion,
-        source_bytes=source_bytes,
-        source_name=source_path.name,
-        source_license=source_license,
+    source_motion = derive_motion_kinematics(
+        bvh_to_motion_ir(
+            bvh_motion,
+            source_bytes=source_bytes,
+            source_name=source_path.name,
+            source_license=source_license,
+        )
     )
     motion_schema = load_json(motion_schema_path)
     source_issues = validate_motion_ir(source_motion, motion_schema)
@@ -281,6 +289,20 @@ def build_simulation_bundle(
     mapped_issues = validate_motion_ir(mapped_motion, motion_schema)
     if mapped_issues:
         raise OhmcError("generated invalid mapped Motion IR: " + "; ".join(mapped_issues))
+    quality_report = trajectory_quality_report(mapped_motion, profile)
+    quality_issues = validate_quality_report(
+        quality_report, load_json(quality_schema_path)
+    )
+    if quality_issues:
+        raise OhmcError(
+            "generated invalid trajectory quality report: "
+            + "; ".join(quality_issues)
+        )
+    if quality_report["status"] == "fail":
+        raise OhmcError(
+            f"trajectory quality failed with {len(quality_report['violations'])} "
+            "limit violations"
+        )
     replay_report = replay_mujoco(mapped_motion, model_path)
     fixture = encode_vendor_fixture(mapped_motion, profile, target["adapter"])
     fixture_issues = _schema_issues(fixture, load_json(fixture_schema_path))
@@ -297,6 +319,7 @@ def build_simulation_bundle(
             "source_motion": "motion.source.json",
             "motion": "motion.json",
             "replay_report": "replay-report.json",
+            "quality_report": "quality-report.json",
             "interface_fixture": "interface-fixture.json",
             "robot_profile": "configs/robot-profile.yaml",
             "semantic_mapping": "configs/semantic-mapping.yaml",
@@ -305,6 +328,7 @@ def build_simulation_bundle(
         _write_json(temporary / artifacts["source_motion"], source_motion)
         _write_json(temporary / artifacts["motion"], mapped_motion)
         _write_json(temporary / artifacts["replay_report"], replay_report)
+        _write_json(temporary / artifacts["quality_report"], quality_report)
         _write_json(temporary / artifacts["interface_fixture"], fixture)
         (temporary / "configs").mkdir(parents=True, exist_ok=True)
         shutil.copy2(profile_path, temporary / artifacts["robot_profile"])
@@ -321,10 +345,13 @@ def build_simulation_bundle(
             "result": {
                 "replay": replay_report["status"],
                 "motion_validation": mapped_motion["validation"]["status"],
+                "motion_quality": quality_report["status"],
                 "hardware_commands_sent": False,
             },
             "capabilities": {
                 "canonical_source_kinematics": True,
+                "trajectory_derivatives": True,
+                "mapping_completeness_report": True,
                 "semantic_joint_mapping": True,
                 "headless_kinematic_replay": True,
                 "vendor_interface_fixture": True,
@@ -345,6 +372,7 @@ def build_simulation_bundle(
                 for name, relative in artifacts.items()
             },
             "warnings": mapped_motion["validation"]["issues"]
+            + quality_report["warnings"]
             + [
                 "replay is kinematic mj_forward validation, not closed-loop physics",
                 "simulation success is not evidence of physical-robot safety",

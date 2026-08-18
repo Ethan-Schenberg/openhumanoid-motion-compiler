@@ -86,6 +86,14 @@ def validate_robot_profile(
             issues.append(f"joint_limits.{name}: bounds must be finite")
         elif lower >= upper:
             issues.append(f"joint_limits.{name}: lower must be less than upper")
+        for field in ("velocity", "acceleration", "effort"):
+            if field not in limit:
+                continue
+            value = float(limit[field])
+            if not math.isfinite(value) or value <= 0:
+                issues.append(
+                    f"joint_limits.{name}.{field}: must be finite and greater than zero"
+                )
     return issues
 
 

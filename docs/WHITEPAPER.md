@@ -92,6 +92,11 @@ Motion IR is the stable contract between retargeting passes and output backends.
 - Constraint limits used during compilation.
 - Validation summary and unresolved warnings.
 
+The implemented quality pass derives velocities and accelerations from actual
+timestamps using non-uniform quadratic stencils. It reports missing profile
+limits and incomplete controllable-joint mapping as missing evidence rather
+than silently passing them.
+
 An illustrative document shape is:
 
 ```yaml

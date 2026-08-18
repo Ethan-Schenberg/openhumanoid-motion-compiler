@@ -44,11 +44,14 @@ def test_one_command_simulation_builds_auditable_bundle(tmp_path: Path) -> None:
     assert manifest["fidelity"] == "synthetic_contract_fixture"
     assert manifest["result"] == {
         "hardware_commands_sent": False,
+        "motion_quality": "warning",
         "motion_validation": "warning",
         "replay": "pass",
     }
     assert manifest["capabilities"]["headless_kinematic_replay"] is True
     assert manifest["capabilities"]["canonical_source_kinematics"] is True
+    assert manifest["capabilities"]["trajectory_derivatives"] is True
+    assert manifest["capabilities"]["mapping_completeness_report"] is True
     assert manifest["capabilities"]["constrained_whole_body_ik"] is False
     assert manifest["capabilities"]["dynamic_controller_simulation"] is False
     assert manifest["capabilities"]["hardware_transport"] is False
@@ -62,6 +65,10 @@ def test_one_command_simulation_builds_auditable_bundle(tmp_path: Path) -> None:
     canonical = json.loads((output / "canonical-motion.json").read_text())
     assert canonical["validation"]["status"] == "pass"
     assert len(canonical["samples"]) == 3
+    quality = json.loads((output / "quality-report.json").read_text())
+    assert quality["status"] == "warning"
+    assert quality["mapping"]["mapped_joint_count"] == 2
+    assert quality["mapping"]["controllable_joint_count"] == 29
 
     for artifact in manifest["artifacts"].values():
         path = output / artifact["path"]
