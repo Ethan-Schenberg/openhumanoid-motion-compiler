@@ -33,8 +33,9 @@ claim SDK message compatibility merely because the model profile validates.
 
 ## AgiBot X2 Ultra
 
-`profiles/agibot_x2_ultra_aimdk_v1.yaml` is derived from the verified
-`X2_URDF-v1.3.0.zip` artifact and the public AimDK 1.0 joint contract. The URDF
+`profiles/agibot_x2_ultra_aimdk_v1.yaml` is derived from the official
+`AgibotTech/agibot_x2_urdf` repository at locked revision `77f43eb...` and the
+public AimDK 1.0 joint contract. The URDF
 contains 31 non-fixed revolute joints. The OHMC whitelist contains 30:
 
 - 12 leg joints
@@ -50,10 +51,13 @@ AimDK, firmware, and head configuration rather than inheriting model authority.
 Evidence:
 
 - https://x2-aimdk.agibot.com/en/latest/Interface/control_mod/joint_control.html
-- https://x2-aimdk.agibot.com/zh-cn/latest/_downloads/2ffc9785259556f409e385974a7a0461/X2_URDF-v1.3.0.zip
+- https://github.com/AgibotTech/agibot_x2_urdf
+- https://github.com/AgibotTech/agibot_x2_urdf/blob/77f43eb0904dae4c48ccd9154fee824f8ffd4d38/X2_URDF-v1.3.0/x2_ultra.urdf
 
-The profile records both the archive SHA-256 and the SHA-256 of
-`X2_URDF-v1.3.0/x2_ultra.urdf`. The archive is not redistributed by OHMC.
+The profile records the immutable Git revision and SHA-256 of
+`X2_URDF-v1.3.0/x2_ultra.urdf`. OHMC resolves the model from the pinned source;
+the separate AimDK binary artifact remains local-import only because its
+redistribution license is unresolved.
 
 ## Semantic mapping
 

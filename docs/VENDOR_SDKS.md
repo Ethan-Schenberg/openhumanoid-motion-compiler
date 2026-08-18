@@ -15,7 +15,7 @@ Unitree and AgiBot X2 are first-class OHMC platforms. Their adapters, dependency
 | Unitree | `unitree_sdk2` | Official public repository, BSD-3-Clause | Pinned Git source | Allowed with license and notice preservation |
 | Unitree | `unitree_ros2` | Official public repository, BSD-3-Clause | Pinned Git source | Allowed with license and notice preservation |
 | Unitree | `unitree_mujoco` | Official public repository, BSD-3-Clause | Pinned Git source | Allowed with license and notice preservation |
-| AgiBot X2 | X2 URDF v1.3.0 | Official download; ROS package declares MIT | Verified official download | Candidate for inclusion after adding complete license/notice evidence |
+| AgiBot X2 | X2 URDF v1.3.0 | Official GitHub repository, MulanPSL-2.0 | Pinned Git source | Allowed with license and notice preservation |
 | AgiBot X2 | AimDK v1.0.0 artifact | Official download; inspected package manifests say `TODO: License declaration` | Official download or local import, SHA-256 verified | Disabled until an explicit redistribution license is located or obtained |
 
 ## Integration levels
@@ -67,12 +67,16 @@ The X2 backend is built around:
 The resolver supports:
 
 ```text
+ohmc vendor sync agibot-x2
 ohmc vendor import agibot-x2 /path/to/aimdk-aarch64-artifacts.zip
 ohmc vendor verify agibot-x2
 ohmc vendor doctor agibot-x2
 ```
 
-Import copies the artifact into an ignored local cache, verifies its SHA-256, and reports checksum health. Use `vendor doctor` to view dependency status, licensing redistributability notes, and actionable warnings.
+Sync checks out the official X2 description repository at the locked immutable
+revision. Import copies the separate AimDK artifact into an ignored local cache,
+verifies its SHA-256, and reports checksum health. Use `vendor doctor` to view
+dependency status, licensing redistributability notes, and actionable warnings.
 
 ## Updating a dependency
 
@@ -89,12 +93,13 @@ Vendor `latest` branches are never consumed silently by a release build.
 
 ## Current evidence snapshot
 
-This design snapshot recorded the following exact inputs on 2026-08-16:
+This dependency snapshot records the following exact inputs:
 
 - Unitree `unitree_sdk2` HEAD: `21d0a3b2c46ee48c8fdf2783becb6be3beb0a59b`
 - Unitree `unitree_ros2` HEAD: `668d1ec5a05d1c38d3306bdca7d59f2ba3581a88`
 - Unitree `unitree_mujoco` HEAD: `ae6a8403e272733e9996ef59990880330496177f`
 - AgiBot AimDK local official artifact SHA-256: `5bbcf724d54fb28f153db0d272f9acb7906bb1d2cac7dd7ccdc699a5c7eeab35`
-- AgiBot X2 URDF v1.3.0 SHA-256: `e3e14a9631054a14659a2fb9445c4cec8224d88bd489b071bc9ea97853918bf0`
+- AgiBot X2 URDF repository revision (reviewed 2026-08-18): `77f43eb0904dae4c48ccd9154fee824f8ffd4d38`
+- AgiBot X2 v1.3 MJCF SHA-256: `2b755b7affecb4e3df9a0379b2e0ab4a1b2ccda53dd3531ad324dfe5c77cd904`
 
 These commits and checksums are inputs to the first prototype, not permanent claims about the newest upstream versions.

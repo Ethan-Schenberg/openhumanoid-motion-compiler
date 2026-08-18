@@ -84,11 +84,11 @@ targets:
     simulator:
       backend: mujoco
       model:
-        kind: zip_component
+        kind: git_component
         vendor: agibot_x2
         component: urdf
         path: X2_URDF-v1.3.0/x2_ultra.xml
-        expected_sha256: 4cbeae56a09ead4a0753ef912092f0c96bd7c79c7b0d7089d360eeace8a84033
+        expected_sha256: 2b755b7affecb4e3df9a0379b2e0ab4a1b2ccda53dd3531ad324dfe5c77cd904
 
   agibot-x2-ultra-multilimb-benchmark:
     robot_profile: profiles/agibot_x2_ultra_aimdk_v1.yaml
@@ -103,8 +103,8 @@ targets:
     simulator:
       backend: mujoco
       model:
-        kind: zip_component
+        kind: git_component
         vendor: agibot_x2
         component: urdf
         path: X2_URDF-v1.3.0/x2_ultra.xml
-        expected_sha256: 4cbeae56a09ead4a0753ef912092f0c96bd7c79c7b0d7089d360eeace8a84033
+        expected_sha256: 2b755b7affecb4e3df9a0379b2e0ab4a1b2ccda53dd3531ad324dfe5c77cd904

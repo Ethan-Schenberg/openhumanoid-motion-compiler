@@ -42,7 +42,9 @@ gates can reject incomplete mapping or dynamic-limit evidence.
 The largest technical gaps are not packaging gaps. They are motion-quality and
 validation gaps:
 
-- Current mapping covers named rotation channels, not canonical full-body IK.
+- The internal DLS solver is a deterministic reference, not the intended
+  production IK framework. Mink/GMR parity and adapter work now precedes new
+  solver features.
 - Replay is kinematic `mj_forward`, not actuator/controller dynamics.
 - Foot contacts, balance, and self-collision are not yet enforced. Velocity and
   acceleration are derived and checked wherever profiles declare limits;
@@ -142,14 +144,18 @@ validation gaps:
 
 The next implementation order is:
 
-1. Morphology scaling and deterministic timeline resampling. Implemented.
-2. Solver-neutral IK problem contract and a small deterministic reference
-   solver. Implemented.
-3. Expand canonical landmark-to-robot position mapping to 16/16 landmarks.
-   Implemented with a strict source/task coverage gate.
-4. Add frame-orientation tasks and contact-aware dynamic replay metrics.
-5. Side-by-side rendered regression evidence.
+1. Add a Mink backend spike behind the solver-neutral contract. Compare it with
+   the internal DLS oracle on both official models for residual, limit,
+   determinism, runtime, and explicit failure parity.
+2. Add a GMR adapter for licensed BVH input and G1 output, then evaluate an X2
+   configuration as an upstream contribution rather than a private fork.
+3. Define Motion IR interchange fixtures for ProtoMotions and one maintained
+   downstream learning framework; do not implement another training stack.
+4. Add frame-orientation and contact tasks through the selected mature backend,
+   followed by actuator-aware replay metrics.
+5. Produce side-by-side rendered regression evidence from the same manifest.
 
-This order improves the mathematical core before adding presentation layers,
-so future rendered demos remain auditable rather than becoming disconnected
-showcases.
+All major queue items follow the [research-before-build policy](RESEARCH_POLICY.md)
+and the decisions in [the upstream adoption map](UPSTREAM_ADOPTION.md). The
+project will invest in contracts, adapters, cross-vendor coverage, and evidence
+rather than duplicating mature IK, physics, training, or ROS 2 control stacks.

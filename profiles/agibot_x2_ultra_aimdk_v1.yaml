@@ -4,11 +4,10 @@ vendor: AgiBot
 model: X2 Ultra
 model_evidence:
   kind: urdf
-  source: https://x2-aimdk.agibot.com/zh-cn/latest/_downloads/2ffc9785259556f409e385974a7a0461/X2_URDF-v1.3.0.zip
-  version: 1.3.0
-  model_sha256: f84fcd22187d7f3d9730f36b06b39e49fb6a59cd8b1d26bcb5a817dfd300b40a
-  artifact_sha256: e3e14a9631054a14659a2fb9445c4cec8224d88bd489b071bc9ea97853918bf0
-  license: MIT
+  source: https://github.com/AgibotTech/agibot_x2_urdf/blob/77f43eb0904dae4c48ccd9154fee824f8ffd4d38/X2_URDF-v1.3.0/x2_ultra.urdf
+  version: 1.3.0@77f43eb0904dae4c48ccd9154fee824f8ffd4d38
+  model_sha256: 1163b3c76b31c4ea0afd284b67b28948003ce46f7ea4b2d9826f1309e9af7f11
+  license: MulanPSL-2.0
   member: X2_URDF-v1.3.0/x2_ultra.urdf
 control:
   authority: offline_model_only

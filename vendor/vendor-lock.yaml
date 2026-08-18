@@ -1,5 +1,5 @@
 schema: ohmc.vendor_lock/v0.1
-generated_at: "2026-08-16"
+generated_at: "2026-08-18"
 
 vendors:
   unitree:
@@ -36,11 +36,9 @@ vendors:
         redistribute: false
       urdf:
         version: 1.3.0
-        source: https://x2-aimdk.agibot.com/zh-cn/latest/_downloads/2ffc9785259556f409e385974a7a0461/X2_URDF-v1.3.0.zip
-        artifact_name: X2_URDF-v1.3.0.zip
-        sha256: e3e14a9631054a14659a2fb9445c4cec8224d88bd489b071bc9ea97853918bf0
-        acquisition: official_download
-        license: MIT
-        license_evidence: X2_URDF-v1.3.0/package.xml
-        redistribute: false
-        redistribution_note: "Enable after preserving complete MIT license and provenance notice in the vendored package"
+        source: https://github.com/AgibotTech/agibot_x2_urdf.git
+        revision: 77f43eb0904dae4c48ccd9154fee824f8ffd4d38
+        acquisition: git
+        license: MulanPSL-2.0
+        license_evidence: LICENSE at locked revision
+        redistribute: true

@@ -203,6 +203,7 @@ ohmc quality-report BUILD_DIR/motion.json --robot PROFILE.yaml --output BUILD_DI
 ohmc report BUILD_DIR/report.json
 ohmc vendor status
 ohmc vendor sync unitree
+ohmc vendor sync agibot-x2
 ohmc vendor import agibot-x2 /path/to/official-aimdk.zip
 ohmc vendor verify
 ```

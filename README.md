@@ -70,6 +70,7 @@ Not included in v0.1:
 5. **Inspectable passes** — each transformation produces metrics and diagnostics rather than silently modifying trajectories.
 6. **Deterministic builds** — pinned inputs and configuration should produce equivalent Motion IR outputs.
 7. **License-aware dependency delivery** — permissively licensed SDKs may be pinned as source dependencies; official downloadable SDKs without a complete redistribution license are acquired and checksum-verified by tooling rather than copied into Git history.
+8. **Research before build** — evaluate maintained upstream projects, papers, standards, and licenses before creating a new subsystem; prefer adapters and upstream contributions over local forks.
 
 ## Documents
 
@@ -77,6 +78,8 @@ Not included in v0.1:
 - [Project white paper](docs/WHITEPAPER.md)
 - [v0.1 architecture](docs/ARCHITECTURE_V0.1.md)
 - [Vendor SDK integration policy](docs/VENDOR_SDKS.md)
+- [Upstream adoption map](docs/UPSTREAM_ADOPTION.md)
+- [Research-before-build policy](docs/RESEARCH_POLICY.md)
 - [Offline robot profiles](docs/ROBOT_PROFILES.md)
 - [Maintainers and governance](MAINTAINERS.md)
 
@@ -122,7 +125,7 @@ against the official Unitree G1 29DoF or AgiBot X2 Ultra MuJoCo model:
   --output build/unitree-g1 \
   --cache-dir .ohmc-cache
 
-.venv/bin/ohmc vendor import agibot-x2 /path/to/X2_URDF-v1.3.0.zip
+.venv/bin/ohmc vendor sync agibot-x2
 .venv/bin/ohmc simulate examples/simple_motion.bvh \
   --target agibot-x2-ultra \
   --source-license CC0-1.0 \
@@ -304,11 +307,12 @@ Synchronize the pinned Unitree SDK, ROS 2, and MuJoCo repositories:
 .venv/bin/ohmc vendor sync unitree
 ```
 
-Import official AgiBot X2 downloads into the verified local cache:
+Synchronize the pinned official AgiBot X2 model repository. Import AimDK only
+when its separately downloaded artifact is needed:
 
 ```bash
+.venv/bin/ohmc vendor sync agibot-x2
 .venv/bin/ohmc vendor import agibot-x2 /path/to/aimdk-aarch64-artifacts.zip
-.venv/bin/ohmc vendor import agibot-x2 /path/to/X2_URDF-v1.3.0.zip
 .venv/bin/ohmc vendor verify agibot-x2
 .venv/bin/ohmc vendor doctor agibot-x2 --json
 ```
@@ -354,7 +358,8 @@ Implemented foundation:
 - Motion IR v0.1 JSON Schema plus semantic validation.
 - Valid reference Motion IR fixture.
 - Vendor lock parsing and compatibility status.
-- SHA-256 verified import for official AgiBot X2 artifacts.
+- Pinned Git synchronization for the official AgiBot X2 URDF repository and
+  SHA-256 verified import for the separately distributed AimDK artifact.
 - Pinned Git synchronization for Unitree SDK2, ROS 2, and MuJoCo repositories.
 - Automated tests for Motion IR semantics and artifact integrity.
 - Strict BVH hierarchy/channel/frame parsing plus deterministic rotation-channel
@@ -384,7 +389,6 @@ Implemented foundation:
 - Independent bundle/matrix integrity audits covering safe relative paths,
   manifest semantics, child manifests, and every artifact SHA-256.
 
-Full bilateral task coverage, orientation/contact constraints, dynamic
-controller playback, and rendered comparison video are the next implementation
-milestones.
+Mink/GMR adapter parity, orientation/contact constraints, dynamic controller
+playback, and rendered comparison video are the next implementation milestones.
 Real-robot execution remains outside v0.1.

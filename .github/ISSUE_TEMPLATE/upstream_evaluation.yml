@@ -1,0 +1,52 @@
+name: Upstream evaluation
+description: Evaluate existing projects and papers before building a major OHMC feature
+title: "[upstream] "
+labels: [research, upstream]
+body:
+  - type: textarea
+    id: capability
+    attributes:
+      label: Capability and acceptance test
+      description: Define the concrete behavior and how success will be measured.
+    validations:
+      required: true
+  - type: textarea
+    id: candidates
+    attributes:
+      label: Official projects and papers reviewed
+      description: Include repository or paper links, reviewed revisions, supported robots/formats, and maintenance evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: licenses
+    attributes:
+      label: License and provenance assessment
+      description: Record the observed licenses, redistribution constraints, and primary evidence.
+    validations:
+      required: true
+  - type: dropdown
+    id: decision
+    attributes:
+      label: Proposed decision
+      options:
+        - Adopt upstream
+        - Adapt behind an OHMC interface
+        - Contribute upstream first
+        - Reference or benchmark only
+        - Build locally after rejecting candidates
+    validations:
+      required: true
+  - type: textarea
+    id: parity
+    attributes:
+      label: Adapter spike and parity evidence
+      description: Describe fixtures, metrics, failures, revision pins, and regression tests.
+    validations:
+      required: true
+  - type: textarea
+    id: local_scope
+    attributes:
+      label: OHMC-specific scope
+      description: Explain the smallest local code that remains necessary.
+    validations:
+      required: true

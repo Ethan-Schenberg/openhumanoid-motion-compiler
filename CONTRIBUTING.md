@@ -8,6 +8,8 @@ OHMC welcomes reproducible bug reports, documentation fixes, robot profiles, mot
 - Confirm that every added model, motion, dataset, SDK fragment, and generated artifact can legally be redistributed.
 - Keep physical-robot execution out of ordinary tests and examples.
 - Open an issue before proposing a breaking Motion IR schema change.
+- For a major feature, complete the [research-before-build policy](docs/RESEARCH_POLICY.md) and open an `Upstream evaluation` issue before implementation.
+- Record why an existing project is adopted, adapted, contributed to, referenced, or rejected. Popularity alone is not a technical or licensing decision.
 
 ## Development setup
 
@@ -26,6 +28,7 @@ A pull request should explain:
 - The affected Motion IR, robot profile, compiler pass, or vendor integration.
 - Tests and fixtures used for validation.
 - Licensing and provenance for new third-party material.
+- The prior-art record and parity evidence for a new subsystem.
 - Whether the change affects simulation, recorded interfaces, or physical hardware.
 
 New behavior requires tests. Safety or compatibility warnings must not be weakened simply to make an example pass.
@@ -33,4 +36,3 @@ New behavior requires tests. Safety or compatibility warnings must not be weaken
 ## Developer Certificate of Origin
 
 By contributing, you certify that you have the right to submit the work under the project's Apache-2.0 license. Add a `Signed-off-by` line to commits when requested during review.
-
