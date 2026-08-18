@@ -72,6 +72,7 @@ Not included in v0.1:
 
 ## Documents
 
+- [2026-08-18 development and validation report](docs/PROJECT_REPORT_2026-08-18.md)
 - [Project white paper](docs/WHITEPAPER.md)
 - [v0.1 architecture](docs/ARCHITECTURE_V0.1.md)
 - [Vendor SDK integration policy](docs/VENDOR_SDKS.md)
