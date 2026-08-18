@@ -1,0 +1,13 @@
+<mujoco model="ohmc_ik_contract_fixture">
+  <compiler angle="radian"/>
+  <option timestep="0.002" gravity="0 0 0"/>
+  <worldbody>
+    <body name="pelvis" pos="0 0 0.9">
+      <joint name="waist_roll_joint" type="hinge" axis="1 0 0" range="-0.52 0.52"/>
+      <geom type="sphere" size="0.025" mass="0.1"/>
+      <body name="left_knee_target" pos="0 0 -0.4">
+        <geom type="sphere" size="0.02" mass="0.05"/>
+      </body>
+    </body>
+  </worldbody>
+</mujoco>

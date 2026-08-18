@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openhumanoid.dev/schemas/ik-problem-v0.1.schema.json",
+  "title": "OHMC solver-neutral inverse-kinematics problem v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "source",
+    "robot",
+    "variables",
+    "tasks",
+    "frames",
+    "solver",
+    "provenance"
+  ],
+  "properties": {
+    "schema": { "const": "ohmc.ik_problem/v0.1" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonical_motion_sha256", "rate_hz"],
+      "properties": {
+        "canonical_motion_sha256": { "$ref": "#/$defs/sha256" },
+        "rate_hz": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "robot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "profile_model_sha256", "solver_model_sha256"],
+      "properties": {
+        "profile": { "type": "string", "minLength": 1 },
+        "profile_model_sha256": { "$ref": "#/$defs/sha256" },
+        "solver_model_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "variables": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/variable" }
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/task" }
+    },
+    "frames": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/frame" }
+    },
+    "solver": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "max_iterations",
+        "damping",
+        "max_step_rad",
+        "neutral_weight",
+        "temporal_weight"
+      ],
+      "properties": {
+        "method": { "const": "damped_least_squares" },
+        "max_iterations": { "type": "integer", "minimum": 1 },
+        "damping": { "type": "number", "exclusiveMinimum": 0 },
+        "max_step_rad": { "type": "number", "exclusiveMinimum": 0 },
+        "neutral_weight": { "type": "number", "minimum": 0 },
+        "temporal_weight": { "type": "number", "minimum": 0 }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_map", "config_sha256", "hardware_commands_sent"],
+      "properties": {
+        "task_map": { "type": "string", "minLength": 1 },
+        "config_sha256": { "$ref": "#/$defs/sha256" },
+        "hardware_commands_sent": { "const": false }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "vector3": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" }
+      ],
+      "items": false,
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "variable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "lower", "upper", "initial"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "lower": { "type": "number" },
+        "upper": { "type": "number" },
+        "initial": { "type": "number" }
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "source_joint",
+        "target_frame",
+        "weight",
+        "tolerance_m",
+        "source_reference_m",
+        "target_reference_m",
+        "scale"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "const": "frame_position" },
+        "source_joint": { "type": "string", "minLength": 1 },
+        "target_frame": { "type": "string", "minLength": 1 },
+        "weight": { "type": "number", "exclusiveMinimum": 0 },
+        "tolerance_m": { "type": "number", "exclusiveMinimum": 0 },
+        "source_reference_m": { "$ref": "#/$defs/vector3" },
+        "target_reference_m": { "$ref": "#/$defs/vector3" },
+        "scale": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "frame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["time", "targets"],
+      "properties": {
+        "time": { "type": "number", "minimum": 0 },
+        "targets": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["task_id", "position_m"],
+            "properties": {
+              "task_id": { "type": "string", "minLength": 1 },
+              "position_m": { "$ref": "#/$defs/vector3" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

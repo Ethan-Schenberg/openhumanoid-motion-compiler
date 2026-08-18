@@ -18,6 +18,14 @@ from .bvh import bvh_to_motion_ir, load_bvh
 from .canonical import bvh_to_canonical_motion, validate_canonical_motion
 from .errors import OhmcError
 from .ir import load_json, validate_motion_ir
+from .ik import (
+    build_ik_problem,
+    ik_result_to_motion_ir,
+    solve_ik_problem,
+    validate_ik_problem,
+    validate_ik_result,
+    validate_ik_task_map,
+)
 from .normalization import normalize_canonical_motion
 from .profiles import (
     load_yaml_object,
@@ -226,6 +234,9 @@ def build_simulation_bundle(
     source_convention: str,
     source_length_unit: str,
     quality_schema_path: Path,
+    ik_task_map_schema_path: Path,
+    ik_problem_schema_path: Path,
+    ik_result_schema_path: Path,
 ) -> dict[str, Any]:
     """Compile, map, replay, and encode an offline evidence bundle atomically."""
     output_dir = output_dir.expanduser().resolve()
@@ -300,7 +311,49 @@ def build_simulation_bundle(
     source_issues = validate_motion_ir(source_motion, motion_schema)
     if source_issues:
         raise OhmcError("generated invalid source Motion IR: " + "; ".join(source_issues))
-    mapped_motion = map_motion_ir(source_motion, profile, mapping)
+    ik_problem = None
+    ik_result = None
+    ik_task_map_path = None
+    if "ik_task_map" in target:
+        ik_task_map_path = project_root / _safe_relative_path(target["ik_task_map"])
+        ik_task_map = load_yaml_object(ik_task_map_path)
+        task_map_issues = validate_ik_task_map(
+            ik_task_map, load_json(ik_task_map_schema_path)
+        )
+        if task_map_issues:
+            raise OhmcError("invalid IK task map: " + "; ".join(task_map_issues))
+        ik_problem = build_ik_problem(
+            canonical_motion, profile, ik_task_map, model_path
+        )
+        problem_issues = validate_ik_problem(
+            ik_problem, load_json(ik_problem_schema_path)
+        )
+        if problem_issues:
+            raise OhmcError(
+                "generated invalid IK problem: " + "; ".join(problem_issues)
+            )
+        ik_result = solve_ik_problem(ik_problem, model_path)
+        result_issues = validate_ik_result(
+            ik_result, load_json(ik_result_schema_path)
+        )
+        if result_issues:
+            raise OhmcError(
+                "generated invalid IK result: " + "; ".join(result_issues)
+            )
+        if ik_result["status"] != "pass":
+            raise OhmcError(
+                "IK failed: "
+                f"{ik_result['summary']['failed_frame_count']}/"
+                f"{ik_result['summary']['frame_count']} frames, "
+                f"peak residual {ik_result['summary']['peak_residual_m']:.9g} m"
+            )
+        mapped_motion = derive_motion_kinematics(
+            ik_result_to_motion_ir(
+                ik_problem, ik_result, canonical_motion, profile
+            )
+        )
+    else:
+        mapped_motion = map_motion_ir(source_motion, profile, mapping)
     mapped_issues = validate_motion_ir(mapped_motion, motion_schema)
     if mapped_issues:
         raise OhmcError("generated invalid mapped Motion IR: " + "; ".join(mapped_issues))
@@ -340,6 +393,14 @@ def build_simulation_bundle(
             "robot_profile": "configs/robot-profile.yaml",
             "semantic_mapping": "configs/semantic-mapping.yaml",
         }
+        if ik_problem is not None and ik_result is not None and ik_task_map_path:
+            artifacts.update(
+                {
+                    "ik_task_map": "configs/ik-task-map.yaml",
+                    "ik_problem": "ik-problem.json",
+                    "ik_result": "ik-result.json",
+                }
+            )
         _write_json(temporary / artifacts["canonical_source"], canonical_source)
         _write_json(temporary / artifacts["canonical_motion"], canonical_motion)
         _write_json(temporary / artifacts["source_motion"], source_motion)
@@ -347,9 +408,14 @@ def build_simulation_bundle(
         _write_json(temporary / artifacts["replay_report"], replay_report)
         _write_json(temporary / artifacts["quality_report"], quality_report)
         _write_json(temporary / artifacts["interface_fixture"], fixture)
+        if ik_problem is not None and ik_result is not None and ik_task_map_path:
+            _write_json(temporary / artifacts["ik_problem"], ik_problem)
+            _write_json(temporary / artifacts["ik_result"], ik_result)
         (temporary / "configs").mkdir(parents=True, exist_ok=True)
         shutil.copy2(profile_path, temporary / artifacts["robot_profile"])
         shutil.copy2(mapping_path, temporary / artifacts["semantic_mapping"])
+        if ik_task_map_path is not None:
+            shutil.copy2(ik_task_map_path, temporary / artifacts["ik_task_map"])
 
         artifact_hashes = {
             name: sha256_file(temporary / relative)
@@ -363,6 +429,7 @@ def build_simulation_bundle(
                 "replay": replay_report["status"],
                 "motion_validation": mapped_motion["validation"]["status"],
                 "motion_quality": quality_report["status"],
+                "ik": "pass" if ik_result is not None else "not_run",
                 "hardware_commands_sent": False,
             },
             "capabilities": {
@@ -374,6 +441,7 @@ def build_simulation_bundle(
                 "semantic_joint_mapping": True,
                 "headless_kinematic_replay": True,
                 "vendor_interface_fixture": True,
+                "constrained_partial_body_ik": ik_result is not None,
                 "constrained_whole_body_ik": False,
                 "dynamic_controller_simulation": False,
                 "hardware_transport": False,

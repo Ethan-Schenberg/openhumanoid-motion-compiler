@@ -32,6 +32,7 @@
       "properties": {
         "robot_profile": { "type": "string", "minLength": 1 },
         "semantic_mapping": { "type": "string", "minLength": 1 },
+        "ik_task_map": { "type": "string", "minLength": 1 },
         "adapter": {
           "enum": ["unitree-g1-lowcmd", "agibot-x2-joint-command-array"]
         },

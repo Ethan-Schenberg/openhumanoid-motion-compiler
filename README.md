@@ -103,8 +103,9 @@ non-executable adapter contract:
 The command emits an atomic, hash-addressed evidence bundle containing
 canonical skeleton motion, source and mapped Motion IR, derived velocity and
 acceleration, a trajectory-quality report, copied resolved configuration, a
-replay report, a vendor interface fixture, and `manifest.json`. It refuses to
-overwrite an existing build directory.
+replay report, a vendor interface fixture, and `manifest.json`. IK-enabled
+targets also contain the resolved task map, solver-neutral IK problem, and
+per-frame IK result. It refuses to overwrite an existing build directory.
 
 After resolving the pinned vendor dependencies, the same command replays
 against the official Unitree G1 29DoF or AgiBot X2 Ultra MuJoCo model:
@@ -129,10 +130,11 @@ against the official Unitree G1 29DoF or AgiBot X2 Ultra MuJoCo model:
   --cache-dir .ohmc-cache
 ```
 
-These are headless kinematic `mj_forward` replays. The manifest explicitly
-marks constrained whole-body IK, closed-loop dynamics, and hardware transport
-as unavailable. See [the project roadmap](docs/ROADMAP.md) for the higher
-simulation target and acceptance gates.
+These are headless kinematic `mj_forward` replays. The official targets now run
+a constrained partial-body IK proof on each vendor model, while the manifest
+still explicitly marks whole-body IK, closed-loop dynamics, and hardware
+transport as unavailable. See [the IK contract](docs/IK_CONTRACT.md) and
+[project roadmap](docs/ROADMAP.md) for the exact boundary and acceptance gates.
 
 Validate the reference Motion IR artifact:
 
@@ -154,6 +156,11 @@ into a prototype Motion IR artifact:
   --rate-hz 100 \
   --morphology-scale 0.9 \
   --output build/canonical-motion-normalized.json
+.venv/bin/ohmc retarget-ik build/canonical-motion-normalized.json \
+  --robot profiles/unitree_g1_29dof.yaml \
+  --task-map examples/ik_task_map_fixture.yaml \
+  --model examples/ik_contract_fixture.xml \
+  --output build/ik-contract
 .venv/bin/ohmc import-bvh examples/simple_motion.bvh \
   --source-license CC0-1.0 \
   --output build/simple_motion.json

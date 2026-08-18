@@ -1,0 +1,17 @@
+schema: ohmc.ik_task_map/v0.1
+id: simple_left_knee_reference_delta_v1
+variables:
+  - waist_roll
+tasks:
+  - id: left_knee_position
+    source_joint: LeftKnee
+    target_frame: left_knee_target
+    weight: 1.0
+    tolerance_m: 0.000001
+    scale: 1.0
+solver:
+  max_iterations: 50
+  damping: 0.000001
+  max_step_rad: 0.1
+  neutral_weight: 0.0
+  temporal_weight: 0.0

@@ -1,0 +1,19 @@
+schema: ohmc.ik_task_map/v0.1
+id: simple_left_knee_unitree_g1_v1
+variables:
+  - left_hip_pitch
+  - left_hip_roll
+  - left_hip_yaw
+tasks:
+  - id: left_knee_position
+    source_joint: LeftKnee
+    target_frame: left_knee_link
+    weight: 1.0
+    tolerance_m: 0.001
+    scale: 1.0
+solver:
+  max_iterations: 100
+  damping: 0.0001
+  max_step_rad: 0.1
+  neutral_weight: 0.000001
+  temporal_weight: 0.000001

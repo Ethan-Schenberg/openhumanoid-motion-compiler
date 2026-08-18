@@ -77,6 +77,11 @@ validation gaps:
 
 ### v0.4 — Full-body constrained IK
 
+- Solver-neutral task/problem/result schemas and a deterministic bounded DLS
+  MuJoCo reference solver are implemented.
+- G1 and X2 official-model bundles execute a three-variable left-hip position
+  task with explicit per-frame residuals and failure states. This is labelled
+  partial-body IK, not whole-body IK.
 - Solve all configured legs, waist, arms, and available head joints.
 - Enforce profile position limits and report residuals per frame.
 - Add foot-contact preservation, self-collision checks, smoothing, and explicit
@@ -122,10 +127,11 @@ validation gaps:
 
 The next implementation order is:
 
-1. Morphology scaling and deterministic timeline resampling.
+1. Morphology scaling and deterministic timeline resampling. Implemented.
 2. Solver-neutral IK problem contract and a small deterministic reference
-   solver.
-3. Canonical landmark-to-robot task mapping for full-body IK.
+   solver. Implemented.
+3. Expand canonical landmark-to-robot task mapping from the implemented
+   left-knee proof to full-body IK.
 4. Contact-aware dynamic replay metrics.
 5. Side-by-side rendered regression evidence.
 

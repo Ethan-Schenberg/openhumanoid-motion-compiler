@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
 from pathlib import Path
+import tempfile
 
 from jsonschema import Draft202012Validator
 
@@ -19,6 +21,14 @@ from .canonical import (
 )
 from .errors import OhmcError
 from .ir import load_json, validate_motion_ir
+from .ik import (
+    build_ik_problem,
+    ik_result_to_motion_ir,
+    solve_ik_problem,
+    validate_ik_problem,
+    validate_ik_result,
+    validate_ik_task_map,
+)
 from .normalization import normalize_canonical_motion
 from .profiles import (
     load_yaml_object,
@@ -76,6 +86,19 @@ def build_parser() -> argparse.ArgumentParser:
         choices=SUPPORTED_SOURCE_CONVENTIONS,
         required=True,
     )
+    canonicalize_bvh.add_argument(
+        "--source-length-unit",
+        choices=tuple(LENGTH_SCALES),
+        required=True,
+    )
+    canonicalize_bvh.add_argument("--force", action="store_true")
+    canonicalize_bvh.add_argument(
+        "--schema",
+        type=Path,
+        default=default_project_root()
+        / "schemas"
+        / "canonical-motion-v0.1.schema.json",
+    )
 
     normalize_canonical = subcommands.add_parser(
         "normalize-canonical",
@@ -93,20 +116,48 @@ def build_parser() -> argparse.ArgumentParser:
         / "schemas"
         / "canonical-motion-v0.1.schema.json",
     )
-    canonicalize_bvh.add_argument(
-        "--source-length-unit",
-        choices=tuple(LENGTH_SCALES),
-        required=True,
+
+    retarget_ik = subcommands.add_parser(
+        "retarget-ik",
+        help="compile and solve a constrained offline IK evidence bundle",
     )
-    canonicalize_bvh.add_argument("--force", action="store_true")
-    canonicalize_bvh.add_argument(
-        "--schema",
+    retarget_ik.add_argument("document", type=Path, help="canonical motion JSON")
+    retarget_ik.add_argument("--robot", type=Path, required=True)
+    retarget_ik.add_argument("--task-map", type=Path, required=True)
+    retarget_ik.add_argument("--model", type=Path, required=True)
+    retarget_ik.add_argument("--output", type=Path, required=True)
+    retarget_ik.add_argument(
+        "--canonical-schema",
         type=Path,
         default=default_project_root()
         / "schemas"
         / "canonical-motion-v0.1.schema.json",
     )
-
+    retarget_ik.add_argument(
+        "--profile-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "robot-profile-v0.1.schema.json",
+    )
+    retarget_ik.add_argument(
+        "--task-map-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "ik-task-map-v0.1.schema.json",
+    )
+    retarget_ik.add_argument(
+        "--problem-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "ik-problem-v0.1.schema.json",
+    )
+    retarget_ik.add_argument(
+        "--result-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "ik-result-v0.1.schema.json",
+    )
+    retarget_ik.add_argument(
+        "--motion-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "motion-ir-v0.1.schema.json",
+    )
     import_bvh = subcommands.add_parser(
         "import-bvh", help="import BVH rotation channels into prototype Motion IR"
     )
@@ -336,6 +387,21 @@ def build_parser() -> argparse.ArgumentParser:
         / "schemas"
         / "trajectory-quality-v0.1.schema.json",
     )
+    simulate.add_argument(
+        "--ik-task-map-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "ik-task-map-v0.1.schema.json",
+    )
+    simulate.add_argument(
+        "--ik-problem-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "ik-problem-v0.1.schema.json",
+    )
+    simulate.add_argument(
+        "--ik-result-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "ik-result-v0.1.schema.json",
+    )
 
     vendor = subcommands.add_parser("vendor", help="manage vendor SDK dependencies")
     vendor.add_argument(
@@ -481,6 +547,81 @@ def run(args: argparse.Namespace) -> int:
             f"scale={args.morphology_scale:g})"
         )
         return 0
+
+    if args.command == "retarget-ik":
+        output = args.output.expanduser().resolve()
+        if output.exists():
+            raise OhmcError(f"refusing to overwrite existing output: {output}")
+        canonical = load_json(args.document)
+        canonical_issues = validate_canonical_motion(
+            canonical, load_json(args.canonical_schema)
+        )
+        if canonical_issues:
+            raise OhmcError(
+                "cannot retarget invalid canonical motion: "
+                + "; ".join(canonical_issues)
+            )
+        profile = load_yaml_object(args.robot)
+        profile_issues = validate_robot_profile(profile, load_json(args.profile_schema))
+        if profile_issues:
+            raise OhmcError("invalid robot profile: " + "; ".join(profile_issues))
+        task_map = load_yaml_object(args.task_map)
+        task_map_issues = validate_ik_task_map(
+            task_map, load_json(args.task_map_schema)
+        )
+        if task_map_issues:
+            raise OhmcError("invalid IK task map: " + "; ".join(task_map_issues))
+        model = args.model.expanduser().resolve()
+        problem = build_ik_problem(canonical, profile, task_map, model)
+        problem_issues = validate_ik_problem(
+            problem, load_json(args.problem_schema)
+        )
+        if problem_issues:
+            raise OhmcError("generated invalid IK problem: " + "; ".join(problem_issues))
+        result = solve_ik_problem(problem, model)
+        result_issues = validate_ik_result(result, load_json(args.result_schema))
+        if result_issues:
+            raise OhmcError("generated invalid IK result: " + "; ".join(result_issues))
+
+        motion = None
+        if result["status"] == "pass":
+            motion = derive_motion_kinematics(
+                ik_result_to_motion_ir(problem, result, canonical, profile)
+            )
+            motion_issues = validate_motion_ir(motion, load_json(args.motion_schema))
+            if motion_issues:
+                raise OhmcError(
+                    "generated invalid IK Motion IR: " + "; ".join(motion_issues)
+                )
+        output.parent.mkdir(parents=True, exist_ok=True)
+        temporary = Path(
+            tempfile.mkdtemp(prefix=f".{output.name}-", dir=str(output.parent))
+        )
+        try:
+            (temporary / "ik-problem.json").write_text(
+                json.dumps(problem, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            (temporary / "ik-result.json").write_text(
+                json.dumps(result, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            if motion is not None:
+                (temporary / "motion.json").write_text(
+                    json.dumps(motion, indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8",
+                )
+            temporary.replace(output)
+        except Exception:
+            shutil.rmtree(temporary, ignore_errors=True)
+            raise
+        print(
+            f"IK bundle: {output} (status={result['status']}, "
+            f"solved={result['summary']['solved_frame_count']}/"
+            f"{result['summary']['frame_count']}, "
+            f"peak_residual={result['summary']['peak_residual_m']:.9g} m)"
+        )
+        return 0 if result["status"] == "pass" else 1
 
     if args.command == "import-bvh":
         output = args.output.expanduser().resolve()
@@ -697,6 +838,9 @@ def run(args: argparse.Namespace) -> int:
             source_convention=args.source_convention,
             source_length_unit=args.source_length_unit,
             quality_schema_path=args.quality_schema,
+            ik_task_map_schema_path=args.ik_task_map_schema,
+            ik_problem_schema_path=args.ik_problem_schema,
+            ik_result_schema_path=args.ik_result_schema,
         )
         print(
             f"simulation bundle: {args.output.expanduser().resolve()} "

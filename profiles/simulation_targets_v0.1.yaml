@@ -15,9 +15,26 @@ targets:
         path: examples/semantic_contract_fixture.xml
         expected_sha256: 0aad9f05868d87a4ea4cc950da76b48194741ed31b49dc8eab724abb549a16ae
 
+  unitree-g1-ik-contract-fixture:
+    robot_profile: profiles/unitree_g1_29dof.yaml
+    semantic_mapping: profiles/mappings/simple_bvh_semantics_v1.yaml
+    ik_task_map: examples/ik_task_map_fixture.yaml
+    adapter: unitree-g1-lowcmd
+    fidelity: synthetic_contract_fixture
+    normalization:
+      morphology_scale: 1.0
+      rate_hz: 50.0
+    simulator:
+      backend: mujoco
+      model:
+        kind: workspace_file
+        path: examples/ik_contract_fixture.xml
+        expected_sha256: 315b3fc990326812f0e224c2f68fa1ef43c517d4255eb7a47fdf506626838a94
+
   unitree-g1:
     robot_profile: profiles/unitree_g1_29dof.yaml
     semantic_mapping: profiles/mappings/simple_bvh_semantics_v1.yaml
+    ik_task_map: profiles/ik/simple_left_knee_unitree_g1_v1.yaml
     adapter: unitree-g1-lowcmd
     fidelity: official_vendor_model
     normalization:
@@ -35,6 +52,7 @@ targets:
   agibot-x2-ultra:
     robot_profile: profiles/agibot_x2_ultra_aimdk_v1.yaml
     semantic_mapping: profiles/mappings/simple_bvh_semantics_v1.yaml
+    ik_task_map: profiles/ik/simple_left_knee_agibot_x2_v1.yaml
     adapter: agibot-x2-joint-command-array
     fidelity: official_vendor_model
     normalization:

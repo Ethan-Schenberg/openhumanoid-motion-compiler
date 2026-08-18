@@ -27,12 +27,14 @@
         "replay",
         "motion_validation",
         "motion_quality",
+        "ik",
         "hardware_commands_sent"
       ],
       "properties": {
         "replay": { "const": "pass" },
         "motion_validation": { "enum": ["pass", "warning", "fail"] },
         "motion_quality": { "enum": ["pass", "warning"] },
+        "ik": { "enum": ["not_run", "pass"] },
         "hardware_commands_sent": { "const": false }
       }
     },
@@ -48,6 +50,7 @@
         "mapping_completeness_report",
         "headless_kinematic_replay",
         "vendor_interface_fixture",
+        "constrained_partial_body_ik",
         "constrained_whole_body_ik",
         "dynamic_controller_simulation",
         "hardware_transport"
@@ -61,8 +64,9 @@
         "semantic_joint_mapping": { "type": "boolean" },
         "headless_kinematic_replay": { "type": "boolean" },
         "vendor_interface_fixture": { "type": "boolean" },
-        "constrained_whole_body_ik": { "type": "boolean" },
-        "dynamic_controller_simulation": { "type": "boolean" },
+        "constrained_partial_body_ik": { "type": "boolean" },
+        "constrained_whole_body_ik": { "const": false },
+        "dynamic_controller_simulation": { "const": false },
         "hardware_transport": { "const": false }
       }
     },
@@ -113,7 +117,10 @@
         "quality_report": { "$ref": "#/$defs/artifact" },
         "interface_fixture": { "$ref": "#/$defs/artifact" },
         "robot_profile": { "$ref": "#/$defs/artifact" },
-        "semantic_mapping": { "$ref": "#/$defs/artifact" }
+        "semantic_mapping": { "$ref": "#/$defs/artifact" },
+        "ik_task_map": { "$ref": "#/$defs/artifact" },
+        "ik_problem": { "$ref": "#/$defs/artifact" },
+        "ik_result": { "$ref": "#/$defs/artifact" }
       }
     },
     "warnings": {
@@ -135,5 +142,34 @@
         "sha256": { "$ref": "#/$defs/sha256" }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "result": {
+            "properties": { "ik": { "const": "pass" } },
+            "required": ["ik"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "capabilities": {
+            "properties": { "constrained_partial_body_ik": { "const": true } }
+          },
+          "artifacts": {
+            "required": ["ik_task_map", "ik_problem", "ik_result"]
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "capabilities": {
+            "properties": { "constrained_partial_body_ik": { "const": false } }
+          }
+        }
+      }
+    }
+  ]
 }

@@ -340,6 +340,12 @@ For each frame, solve an objective composed of:
 
 The exact optimizer is replaceable. Its convergence criteria and fallback policy are configuration, not hidden constants.
 
+The implemented v0.1 contract serializes variables, limits, reference-delta
+position tasks, frame targets, and all DLS parameters separately from the
+MuJoCo reference solver. Results retain per-task residuals, active limits, and
+an explicit solved/failed state for every frame. Current vendor demonstrations
+cover a left-hip/left-knee proof only; they do not claim whole-body coverage.
+
 ### Stage 5: smoothing
 
 - Operate on the complete trajectory.
