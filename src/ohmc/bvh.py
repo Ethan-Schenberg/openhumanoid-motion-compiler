@@ -105,6 +105,9 @@ class _HierarchyParser:
         if channel_count < 0:
             raise OhmcError("CHANNELS count cannot be negative")
         channels = tuple(self.take() for _ in range(channel_count))
+        normalized_channels = [channel.lower() for channel in channels]
+        if len(normalized_channels) != len(set(normalized_channels)):
+            raise OhmcError(f"duplicate BVH channel in joint {name!r}")
         for channel in channels:
             lower = channel.lower()
             if lower not in {

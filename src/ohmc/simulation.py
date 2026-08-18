@@ -15,6 +15,7 @@ from jsonschema import Draft202012Validator
 
 from .adapters import encode_vendor_fixture
 from .bvh import bvh_to_motion_ir, load_bvh
+from .canonical import bvh_to_canonical_motion, validate_canonical_motion
 from .errors import OhmcError
 from .ir import load_json, validate_motion_ir
 from .profiles import (
@@ -215,6 +216,9 @@ def build_simulation_bundle(
     mapping_schema_path: Path,
     fixture_schema_path: Path,
     bundle_schema_path: Path,
+    canonical_schema_path: Path,
+    source_convention: str,
+    source_length_unit: str,
 ) -> dict[str, Any]:
     """Compile, map, replay, and encode an offline evidence bundle atomically."""
     output_dir = output_dir.expanduser().resolve()
@@ -247,8 +251,24 @@ def build_simulation_bundle(
     if mapping_issues:
         raise OhmcError("invalid semantic mapping: " + "; ".join(mapping_issues))
 
+    bvh_motion = load_bvh(source_path)
+    canonical_motion = bvh_to_canonical_motion(
+        bvh_motion,
+        source_bytes=source_bytes,
+        source_name=source_path.name,
+        source_license=source_license,
+        source_convention=source_convention,
+        source_length_unit=source_length_unit,
+    )
+    canonical_issues = validate_canonical_motion(
+        canonical_motion, load_json(canonical_schema_path)
+    )
+    if canonical_issues:
+        raise OhmcError(
+            "generated invalid canonical motion: " + "; ".join(canonical_issues)
+        )
     source_motion = bvh_to_motion_ir(
-        load_bvh(source_path),
+        bvh_motion,
         source_bytes=source_bytes,
         source_name=source_path.name,
         source_license=source_license,
@@ -273,6 +293,7 @@ def build_simulation_bundle(
     )
     try:
         artifacts = {
+            "canonical_motion": "canonical-motion.json",
             "source_motion": "motion.source.json",
             "motion": "motion.json",
             "replay_report": "replay-report.json",
@@ -280,6 +301,7 @@ def build_simulation_bundle(
             "robot_profile": "configs/robot-profile.yaml",
             "semantic_mapping": "configs/semantic-mapping.yaml",
         }
+        _write_json(temporary / artifacts["canonical_motion"], canonical_motion)
         _write_json(temporary / artifacts["source_motion"], source_motion)
         _write_json(temporary / artifacts["motion"], mapped_motion)
         _write_json(temporary / artifacts["replay_report"], replay_report)
@@ -302,6 +324,7 @@ def build_simulation_bundle(
                 "hardware_commands_sent": False,
             },
             "capabilities": {
+                "canonical_source_kinematics": True,
                 "semantic_joint_mapping": True,
                 "headless_kinematic_replay": True,
                 "vendor_interface_fixture": True,
@@ -312,6 +335,8 @@ def build_simulation_bundle(
             "inputs": {
                 "source_sha256": hashlib.sha256(source_bytes).hexdigest(),
                 "source_license": source_license,
+                "source_convention": source_convention,
+                "source_length_unit": source_length_unit,
                 "simulation_model_sha256": sha256_file(model_path),
                 "target_config_sha256": _object_sha256(target),
             },

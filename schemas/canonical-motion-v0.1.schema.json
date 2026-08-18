@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openhumanoid.dev/schemas/canonical-motion-v0.1.schema.json",
+  "title": "OHMC canonical skeleton motion v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "source",
+    "frames",
+    "skeleton",
+    "samples",
+    "passes",
+    "validation"
+  ],
+  "properties": {
+    "schema": { "const": "ohmc.canonical_motion/v0.1" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "sha256", "license", "uri"],
+      "properties": {
+        "kind": { "const": "bvh" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "license": { "type": "string", "minLength": 1 },
+        "uri": { "type": "string", "minLength": 1 }
+      }
+    },
+    "frames": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["convention", "source_convention", "length_unit"],
+      "properties": {
+        "convention": {
+          "const": "right_handed_x_forward_y_left_z_up"
+        },
+        "source_convention": {
+          "enum": [
+            "right_handed_x_forward_y_left_z_up",
+            "right_handed_x_right_y_up_z_backward"
+          ]
+        },
+        "length_unit": { "const": "meter" }
+      }
+    },
+    "skeleton": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["joints"],
+      "properties": {
+        "joints": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/joint" }
+        }
+      }
+    },
+    "samples": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/sample" }
+    },
+    "passes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/pass" }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "issues"],
+      "properties": {
+        "status": { "enum": ["pass", "warning", "fail"] },
+        "issues": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "vector3": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" }
+      ],
+      "items": false,
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "quaternion": {
+      "description": "Quaternion in x, y, z, w order",
+      "type": "array",
+      "prefixItems": [
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" }
+      ],
+      "items": false,
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "joint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "parent_index", "rest_offset_m"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "parent_index": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "integer", "minimum": 0 }
+          ]
+        },
+        "rest_offset_m": { "$ref": "#/$defs/vector3" }
+      }
+    },
+    "sample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "time",
+        "root_translation_m",
+        "local_rotations_xyzw",
+        "world_positions_m",
+        "world_rotations_xyzw"
+      ],
+      "properties": {
+        "time": { "type": "number", "minimum": 0 },
+        "root_translation_m": { "$ref": "#/$defs/vector3" },
+        "local_rotations_xyzw": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/quaternion" }
+        },
+        "world_positions_m": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/vector3" }
+        },
+        "world_rotations_xyzw": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/quaternion" }
+        }
+      }
+    },
+    "pass": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "config_sha256"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "config_sha256": { "$ref": "#/$defs/sha256" },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        },
+        "warnings": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

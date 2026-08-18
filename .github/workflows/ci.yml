@@ -31,6 +31,7 @@ jobs:
       - name: Import BVH example
         run: |
           ohmc inspect-source examples/simple_motion.bvh
+          ohmc canonicalize-bvh examples/simple_motion.bvh --source-license CC0-1.0 --source-convention right_handed_x_right_y_up_z_backward --source-length-unit m --output build/canonical-motion.json
           ohmc import-bvh examples/simple_motion.bvh --source-license CC0-1.0 --output build/simple_motion.json
           ohmc validate-ir build/simple_motion.json
           ohmc replay build/simple_motion.json --backend mujoco --model examples/simple_chain.xml --report build/replay-report.json
@@ -42,6 +43,6 @@ jobs:
           ohmc validate-ir build/agibot_x2_motion.json
           ohmc encode-fixture build/unitree_g1_motion.json --robot profiles/unitree_g1_29dof.yaml --adapter unitree-g1-lowcmd --output build/unitree_g1_lowcmd_fixture.json
           ohmc encode-fixture build/agibot_x2_motion.json --robot profiles/agibot_x2_ultra_aimdk_v1.yaml --adapter agibot-x2-joint-command-array --output build/agibot_x2_joint_command_fixture.json
-          ohmc simulate examples/simple_motion.bvh --target unitree-g1-contract-fixture --source-license CC0-1.0 --output build/one-click-smoke --cache-dir .ohmc-cache
+          ohmc simulate examples/simple_motion.bvh --target unitree-g1-contract-fixture --source-license CC0-1.0 --source-convention right_handed_x_right_y_up_z_backward --source-length-unit m --output build/one-click-smoke --cache-dir .ohmc-cache
       - name: Validate vendor lock
         run: ohmc vendor --cache-dir .ohmc-cache status

@@ -11,6 +11,12 @@ from jsonschema import Draft202012Validator
 
 from .adapters import SUPPORTED_ADAPTERS, encode_vendor_fixture
 from .bvh import bvh_to_motion_ir, load_bvh
+from .canonical import (
+    LENGTH_SCALES,
+    SUPPORTED_SOURCE_CONVENTIONS,
+    bvh_to_canonical_motion,
+    validate_canonical_motion,
+)
 from .errors import OhmcError
 from .ir import load_json, validate_motion_ir
 from .profiles import (
@@ -51,6 +57,32 @@ def build_parser() -> argparse.ArgumentParser:
         "inspect-source", help="inspect a BVH source without compiling it"
     )
     inspect_source.add_argument("document", type=Path)
+
+    canonicalize_bvh = subcommands.add_parser(
+        "canonicalize-bvh",
+        help="evaluate a BVH skeleton in canonical coordinates",
+    )
+    canonicalize_bvh.add_argument("document", type=Path)
+    canonicalize_bvh.add_argument("--output", type=Path, required=True)
+    canonicalize_bvh.add_argument("--source-license", required=True)
+    canonicalize_bvh.add_argument(
+        "--source-convention",
+        choices=SUPPORTED_SOURCE_CONVENTIONS,
+        required=True,
+    )
+    canonicalize_bvh.add_argument(
+        "--source-length-unit",
+        choices=tuple(LENGTH_SCALES),
+        required=True,
+    )
+    canonicalize_bvh.add_argument("--force", action="store_true")
+    canonicalize_bvh.add_argument(
+        "--schema",
+        type=Path,
+        default=default_project_root()
+        / "schemas"
+        / "canonical-motion-v0.1.schema.json",
+    )
 
     import_bvh = subcommands.add_parser(
         "import-bvh", help="import BVH rotation channels into prototype Motion IR"
@@ -161,6 +193,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="SPDX identifier or other explicit license assertion",
     )
     simulate.add_argument(
+        "--source-convention",
+        choices=SUPPORTED_SOURCE_CONVENTIONS,
+        required=True,
+        help="explicit coordinate convention declared by the BVH source",
+    )
+    simulate.add_argument(
+        "--source-length-unit",
+        choices=tuple(LENGTH_SCALES),
+        required=True,
+        help="length unit used by BVH OFFSET and position channels",
+    )
+    simulate.add_argument(
         "--output", type=Path, required=True, help="new evidence-bundle directory"
     )
     simulate.add_argument(
@@ -214,6 +258,13 @@ def build_parser() -> argparse.ArgumentParser:
         default=default_project_root()
         / "schemas"
         / "simulation-bundle-v0.1.schema.json",
+    )
+    simulate.add_argument(
+        "--canonical-schema",
+        type=Path,
+        default=default_project_root()
+        / "schemas"
+        / "canonical-motion-v0.1.schema.json",
     )
 
     vendor = subcommands.add_parser("vendor", help="manage vendor SDK dependencies")
@@ -300,6 +351,35 @@ def run(args: argparse.Namespace) -> int:
         print(f"frames: {len(motion.frames)}")
         print(f"frame_time_seconds: {motion.frame_time:.9g}")
         print(f"duration_seconds: {motion.duration:.9g}")
+        return 0
+
+    if args.command == "canonicalize-bvh":
+        output = args.output.expanduser().resolve()
+        if output.exists() and not args.force:
+            raise OhmcError(f"refusing to overwrite existing output: {output}")
+        source = args.document.expanduser().resolve()
+        try:
+            source_bytes = source.read_bytes()
+        except FileNotFoundError as exc:
+            raise OhmcError(f"file not found: {source}") from exc
+        document = bvh_to_canonical_motion(
+            load_bvh(source),
+            source_bytes=source_bytes,
+            source_name=args.document.name,
+            source_license=args.source_license,
+            source_convention=args.source_convention,
+            source_length_unit=args.source_length_unit,
+        )
+        issues = validate_canonical_motion(document, load_json(args.schema))
+        if issues:
+            raise OhmcError("generated invalid canonical motion: " + "; ".join(issues))
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+        print(
+            f"canonical motion: {output} "
+            f"({len(document['skeleton']['joints'])} joints, "
+            f"{len(document['samples'])} frames)"
+        )
         return 0
 
     if args.command == "import-bvh":
@@ -444,6 +524,9 @@ def run(args: argparse.Namespace) -> int:
             mapping_schema_path=args.mapping_schema,
             fixture_schema_path=args.fixture_schema,
             bundle_schema_path=args.bundle_schema,
+            canonical_schema_path=args.canonical_schema,
+            source_convention=args.source_convention,
+            source_length_unit=args.source_length_unit,
         )
         print(
             f"simulation bundle: {args.output.expanduser().resolve()} "

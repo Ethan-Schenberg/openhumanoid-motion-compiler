@@ -189,8 +189,9 @@ Initial commands:
 
 ```text
 ohmc inspect-source INPUT.bvh
+ohmc canonicalize-bvh INPUT.bvh --source-convention CONVENTION --source-length-unit UNIT --source-license SPDX --output canonical.json
 ohmc inspect-robot PROFILE.yaml
-ohmc simulate INPUT.bvh --target TARGET --source-license SPDX --output BUILD_DIR
+ohmc simulate INPUT.bvh --target TARGET --source-license SPDX --source-convention CONVENTION --source-length-unit UNIT --output BUILD_DIR
 ohmc validate-ir BUILD_DIR/motion.json
 ohmc replay BUILD_DIR/motion.json --backend mujoco
 ohmc report BUILD_DIR/report.json
@@ -210,12 +211,17 @@ Required fields:
 
 - Schema version.
 - Source hash and provenance.
-- Timestamp array in seconds.
+- Strictly increasing timestamps in seconds.
 - Canonical frame convention identifier.
 - Skeleton hierarchy.
-- Local transforms.
-- World transforms or enough information to derive them.
-- Missing-data mask.
+- Ordered joint hierarchy with parent indices and rest offsets in metres.
+- Local rotations as normalized `x, y, z, w` quaternions.
+- World joint positions and rotations for every sample.
+- Explicit source coordinate convention and source-to-metre scale provenance.
+
+The implemented v0.1 contract is documented in
+[`CANONICAL_MOTION.md`](CANONICAL_MOTION.md). Missing-data masks remain planned
+for video and incomplete mocap frontends.
 
 ### 4.2 Robot profile
 
@@ -239,6 +245,7 @@ A build directory is self-describing:
 ```text
 build/example/
   manifest.json
+  canonical-motion.json
   motion.source.json
   motion.json
   replay-report.json

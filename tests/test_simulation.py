@@ -21,6 +21,10 @@ def run_fixture_simulation(output: Path, cache_dir: Path) -> int:
             "unitree-g1-contract-fixture",
             "--source-license",
             "CC0-1.0",
+            "--source-convention",
+            "right_handed_x_right_y_up_z_backward",
+            "--source-length-unit",
+            "m",
             "--output",
             str(output),
             "--cache-dir",
@@ -44,6 +48,7 @@ def test_one_command_simulation_builds_auditable_bundle(tmp_path: Path) -> None:
         "replay": "pass",
     }
     assert manifest["capabilities"]["headless_kinematic_replay"] is True
+    assert manifest["capabilities"]["canonical_source_kinematics"] is True
     assert manifest["capabilities"]["constrained_whole_body_ik"] is False
     assert manifest["capabilities"]["dynamic_controller_simulation"] is False
     assert manifest["capabilities"]["hardware_transport"] is False
@@ -54,6 +59,9 @@ def test_one_command_simulation_builds_auditable_bundle(tmp_path: Path) -> None:
     report = json.loads((output / "replay-report.json").read_text())
     assert report["status"] == "pass"
     assert report["hardware_commands_sent"] is False
+    canonical = json.loads((output / "canonical-motion.json").read_text())
+    assert canonical["validation"]["status"] == "pass"
+    assert len(canonical["samples"]) == 3
 
     for artifact in manifest["artifacts"].values():
         path = output / artifact["path"]

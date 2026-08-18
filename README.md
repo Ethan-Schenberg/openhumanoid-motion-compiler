@@ -95,13 +95,15 @@ non-executable adapter contract:
 .venv/bin/ohmc simulate examples/simple_motion.bvh \
   --target unitree-g1-contract-fixture \
   --source-license CC0-1.0 \
+  --source-convention right_handed_x_right_y_up_z_backward \
+  --source-length-unit m \
   --output build/one-click-smoke
 ```
 
-The command emits an atomic, hash-addressed evidence bundle containing source
-and mapped Motion IR, copied resolved configuration, a replay report, a vendor
-interface fixture, and `manifest.json`. It refuses to overwrite an existing
-build directory.
+The command emits an atomic, hash-addressed evidence bundle containing
+canonical skeleton motion, source and mapped Motion IR, copied resolved
+configuration, a replay report, a vendor interface fixture, and
+`manifest.json`. It refuses to overwrite an existing build directory.
 
 After resolving the pinned vendor dependencies, the same command replays
 against the official Unitree G1 29DoF or AgiBot X2 Ultra MuJoCo model:
@@ -111,6 +113,8 @@ against the official Unitree G1 29DoF or AgiBot X2 Ultra MuJoCo model:
 .venv/bin/ohmc simulate examples/simple_motion.bvh \
   --target unitree-g1 \
   --source-license CC0-1.0 \
+  --source-convention right_handed_x_right_y_up_z_backward \
+  --source-length-unit m \
   --output build/unitree-g1 \
   --cache-dir .ohmc-cache
 
@@ -118,6 +122,8 @@ against the official Unitree G1 29DoF or AgiBot X2 Ultra MuJoCo model:
 .venv/bin/ohmc simulate examples/simple_motion.bvh \
   --target agibot-x2-ultra \
   --source-license CC0-1.0 \
+  --source-convention right_handed_x_right_y_up_z_backward \
+  --source-length-unit m \
   --output build/agibot-x2-ultra \
   --cache-dir .ohmc-cache
 ```
@@ -138,18 +144,30 @@ into a prototype Motion IR artifact:
 
 ```bash
 .venv/bin/ohmc inspect-source examples/simple_motion.bvh
+.venv/bin/ohmc canonicalize-bvh examples/simple_motion.bvh \
+  --source-license CC0-1.0 \
+  --source-convention right_handed_x_right_y_up_z_backward \
+  --source-length-unit m \
+  --output build/canonical-motion.json
 .venv/bin/ohmc import-bvh examples/simple_motion.bvh \
   --source-license CC0-1.0 \
   --output build/simple_motion.json
 .venv/bin/ohmc validate-ir build/simple_motion.json
 ```
 
-The importer converts BVH rotation values from degrees to radians and records
-the source hash, timing, channel order, configuration hash, skipped translation
-channels, and the fact that canonical axis remapping is still pending. This
-ingestion artifact is deliberately labelled with the
-`bvh_rotation_channels_v1` prototype profile: it is not yet an IK-retargeted
-robot trajectory and cannot command hardware.
+The canonicalizer evaluates joint offsets, position channels, and rotation
+channels in declared order; converts source axes and units into right-handed
+`+X` forward, `+Y` left, `+Z` up metres; and emits local quaternions plus world
+joint poses. BVH files do not reliably declare axes or length units, so both
+inputs are mandatory instead of guessed. See
+[the canonical motion contract](docs/CANONICAL_MOTION.md).
+
+The separate Motion IR importer converts rotation values from degrees to
+radians and records the source hash, timing, channel order, configuration hash,
+skipped translation channels, and the fact that this prototype joint-vector
+path has not consumed canonical transforms yet. It is deliberately labelled
+with the `bvh_rotation_channels_v1` prototype profile: it is not yet an
+IK-retargeted robot trajectory and cannot command hardware.
 
 Install the optional MuJoCo dependency and run a headless kinematic replay:
 
@@ -279,6 +297,8 @@ Implemented foundation:
   fixtures with schema validation and CI conformance tests.
 - One-command, atomic simulation evidence bundles for synthetic contract smoke
   tests and pinned official Unitree G1/AgiBot X2 Ultra models.
+- Canonical BVH skeleton evaluation with explicit source axes/units, ordered
+  local rotations, metre offsets, quaternions, and deterministic world poses.
 
 Canonical root transforms, full-body semantic mapping, constrained IK compiler
 passes, dynamic simulator playback, and rendered comparison video are the next

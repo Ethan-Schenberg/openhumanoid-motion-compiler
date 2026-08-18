@@ -57,10 +57,11 @@ validation gaps:
 - Output is atomic and existing build directories are never overwritten.
 - Synthetic smoke and official Unitree/AgiBot model targets are distinct.
 
-### v0.3 — Canonical motion compiler
+### v0.3 — Canonical motion compiler (in progress)
 
 - Convert BVH local transforms into the documented right-handed canonical
-  skeleton.
+  skeleton. Implemented with explicit source convention/unit, ordered Euler
+  evaluation, local quaternions, and world-pose golden tests.
 - Add morphology scaling and deterministic timeline resampling passes.
 - Emit pass-level input/output hashes and metrics.
 - Gate: mirrored, rotated, and different-height fixtures produce stable expected
@@ -113,9 +114,9 @@ validation gaps:
 
 The next implementation order is:
 
-1. Canonical BVH transform pass with golden-coordinate tests.
-2. Velocity and acceleration validator derived from timestamps.
-3. Full-body profile mapping completeness report.
+1. Velocity and acceleration validator derived from timestamps.
+2. Full-body profile mapping completeness report.
+3. Morphology scaling and deterministic timeline resampling.
 4. Solver-neutral IK problem contract and a small deterministic reference
    solver.
 5. Contact-aware dynamic replay metrics.

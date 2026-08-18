@@ -64,6 +64,11 @@ Frontends parse motion sources and normalize them into a canonical skeleton sequ
 
 The v0.1 frontend supports BVH. Video pose estimation and live motion capture are later extensions.
 
+The implemented BVH frontend requires an explicit source coordinate convention
+and length unit. It evaluates channels in their declared order and emits the
+schema-validated `ohmc.canonical_motion/v0.1` hierarchy with local quaternions
+and world poses; it does not infer conventions from skeleton appearance.
+
 ### 4.2 Canonical skeleton representation
 
 The canonical representation isolates human-source conventions from robot conventions. It contains named semantic landmarks such as pelvis, torso, head, shoulders, elbows, wrists, hips, knees, ankles, heels, and toes.
