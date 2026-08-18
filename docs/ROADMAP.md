@@ -133,6 +133,8 @@ validation gaps:
   performance budget, and signed release artifacts.
 - Gate: a third party can reproduce the published bundles, videos, and metrics
   using only documented commands.
+- Independent deterministic bundle/matrix integrity verification is implemented
+  for manifests, safe paths, child bundles, and artifact SHA-256 values.
 
 ## Immediate contribution queue
 

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openhumanoid.dev/schemas/evidence-audit-v0.1.schema.json",
+  "title": "OHMC evidence integrity audit v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "kind",
+    "status",
+    "root_manifest_sha256",
+    "checked_bundle_count",
+    "checked_artifact_count",
+    "issues",
+    "hardware_commands_sent"
+  ],
+  "properties": {
+    "schema": { "const": "ohmc.evidence_audit/v0.1" },
+    "kind": { "enum": ["simulation_bundle", "simulation_matrix", "unknown"] },
+    "status": { "enum": ["pass", "fail"] },
+    "root_manifest_sha256": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      ]
+    },
+    "checked_bundle_count": { "type": "integer", "minimum": 0 },
+    "checked_artifact_count": { "type": "integer", "minimum": 0 },
+    "issues": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "hardware_commands_sent": { "const": false }
+  }
+}

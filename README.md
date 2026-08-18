@@ -154,6 +154,8 @@ against the official Unitree G1 29DoF or AgiBot X2 Ultra MuJoCo model:
   --source-length-unit m \
   --output build/full-body-matrix \
   --cache-dir .ohmc-cache
+.venv/bin/ohmc verify-evidence build/full-body-matrix \
+  --report build/full-body-matrix-audit.json
 ```
 
 These are headless kinematic `mj_forward` replays. The official targets now run
@@ -162,6 +164,7 @@ still explicitly marks whole-body IK, closed-loop dynamics, and hardware
 transport as unavailable. See [the IK contract](docs/IK_CONTRACT.md) and
 [landmark coverage contract](docs/LANDMARK_COVERAGE.md), plus the
 [target matrix contract](docs/TARGET_MATRIX.md) and
+[evidence audit contract](docs/EVIDENCE_AUDIT.md), plus the
 [project roadmap](docs/ROADMAP.md), for the exact boundary and acceptance gates.
 
 Validate the reference Motion IR artifact:
@@ -375,6 +378,8 @@ Implemented foundation:
   claiming whole-body coverage.
 - A 16-landmark original CC0 full-body BVH benchmark and machine-readable source
   and IK-task coverage reports with strict CLI gates.
+- Independent bundle/matrix integrity audits covering safe relative paths,
+  manifest semantics, child manifests, and every artifact SHA-256.
 
 Full bilateral task coverage, orientation/contact constraints, dynamic
 controller playback, and rendered comparison video are the next implementation

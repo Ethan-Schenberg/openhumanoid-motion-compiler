@@ -12,6 +12,7 @@ import tempfile
 from jsonschema import Draft202012Validator
 
 from .adapters import SUPPORTED_ADAPTERS, encode_vendor_fixture
+from .audit import validate_evidence_audit, verify_evidence
 from .bvh import bvh_to_motion_ir, load_bvh
 from .canonical import (
     LENGTH_SCALES,
@@ -68,6 +69,33 @@ def build_parser() -> argparse.ArgumentParser:
         "--schema",
         type=Path,
         default=default_project_root() / "schemas" / "motion-ir-v0.1.schema.json",
+    )
+
+    verify_evidence_parser = subcommands.add_parser(
+        "verify-evidence",
+        help="verify bundle or matrix schemas, paths, and SHA-256 integrity",
+    )
+    verify_evidence_parser.add_argument("directory", type=Path)
+    verify_evidence_parser.add_argument("--report", type=Path)
+    verify_evidence_parser.add_argument("--force", action="store_true")
+    verify_evidence_parser.add_argument(
+        "--bundle-schema",
+        type=Path,
+        default=default_project_root()
+        / "schemas"
+        / "simulation-bundle-v0.1.schema.json",
+    )
+    verify_evidence_parser.add_argument(
+        "--matrix-schema",
+        type=Path,
+        default=default_project_root()
+        / "schemas"
+        / "simulation-matrix-v0.1.schema.json",
+    )
+    verify_evidence_parser.add_argument(
+        "--audit-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "evidence-audit-v0.1.schema.json",
     )
 
     inspect_source = subcommands.add_parser(
@@ -522,6 +550,31 @@ def run(args: argparse.Namespace) -> int:
             return 1
         print(f"valid Motion IR: {args.document}")
         return 0
+
+    if args.command == "verify-evidence":
+        audit = verify_evidence(
+            args.directory,
+            bundle_schema=load_json(args.bundle_schema),
+            matrix_schema=load_json(args.matrix_schema),
+        )
+        audit_issues = validate_evidence_audit(audit, load_json(args.audit_schema))
+        if audit_issues:
+            raise OhmcError("generated invalid evidence audit: " + "; ".join(audit_issues))
+        if args.report:
+            report = args.report.expanduser().resolve()
+            if report.exists() and not args.force:
+                raise OhmcError(f"refusing to overwrite existing output: {report}")
+            report.parent.mkdir(parents=True, exist_ok=True)
+            report.write_text(json.dumps(audit, indent=2) + "\n", encoding="utf-8")
+        print(
+            f"evidence integrity: {audit['status']} "
+            f"(kind={audit['kind']}, bundles={audit['checked_bundle_count']}, "
+            f"artifacts={audit['checked_artifact_count']}, "
+            f"issues={len(audit['issues'])})"
+        )
+        for issue in audit["issues"]:
+            print(f"ERROR {issue}")
+        return 0 if audit["status"] == "pass" else 1
 
     if args.command == "inspect-source":
         motion = load_bvh(args.document)
