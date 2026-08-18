@@ -3,9 +3,13 @@ import json
 from pathlib import Path
 
 from ohmc.cli import main
+from ohmc.simulation import validate_simulation_matrix
 
 
 ROOT = Path(__file__).resolve().parents[1]
+MATRIX_SCHEMA = json.loads(
+    (ROOT / "schemas" / "simulation-matrix-v0.1.schema.json").read_text()
+)
 
 
 def file_sha256(path: Path) -> str:
@@ -135,4 +139,55 @@ def test_one_command_ik_simulation_packages_solver_evidence(tmp_path: Path) -> N
     assert (output / "configs" / "ik-task-map.yaml").is_file()
     assert json.loads((output / "motion.json").read_text())["trajectory"]["joints"] == [
         "waist_roll_joint"
+    ]
+
+
+def test_all_target_matrix_isolates_missing_vendor_dependencies(tmp_path: Path) -> None:
+    output = tmp_path / "matrix"
+    cache = tmp_path / "empty-cache"
+
+    result = main(
+        [
+            "simulate",
+            str(ROOT / "examples" / "simple_motion.bvh"),
+            "--target",
+            "all",
+            "--source-license",
+            "CC0-1.0",
+            "--source-convention",
+            "right_handed_x_right_y_up_z_backward",
+            "--source-length-unit",
+            "m",
+            "--output",
+            str(output),
+            "--cache-dir",
+            str(cache),
+        ]
+    )
+
+    assert result == 1
+    matrix = json.loads((output / "matrix-manifest.json").read_text())
+    assert matrix["summary"] == {
+        "status": "fail",
+        "target_count": 4,
+        "passed_count": 2,
+        "failed_count": 2,
+    }
+    assert matrix["source"]["input_contract"] == "simple_motion_v1"
+    rows = {row["target"]: row for row in matrix["targets"]}
+    assert rows["unitree-g1-contract-fixture"]["status"] == "pass"
+    assert rows["unitree-g1-ik-contract-fixture"]["status"] == "pass"
+    assert rows["unitree-g1"]["status"] == "fail"
+    assert "missing" in rows["unitree-g1"]["error"]
+    assert rows["agibot-x2-ultra"]["status"] == "fail"
+    assert (
+        output
+        / rows["unitree-g1-ik-contract-fixture"]["bundle"]
+        / "manifest.json"
+    ).is_file()
+    assert validate_simulation_matrix(matrix, MATRIX_SCHEMA) == []
+
+    matrix["summary"]["passed_count"] = 99
+    assert validate_simulation_matrix(matrix, MATRIX_SCHEMA) == [
+        "summary.passed_count does not match targets"
     ]

@@ -26,6 +26,7 @@
         "semantic_mapping",
         "adapter",
         "fidelity",
+        "input_contract",
         "normalization",
         "simulator"
       ],
@@ -38,6 +39,9 @@
         },
         "fidelity": {
           "enum": ["synthetic_contract_fixture", "official_vendor_model"]
+        },
+        "input_contract": {
+          "enum": ["simple_motion_v1", "full_body_landmarks_v1"]
         },
         "normalization": {
           "type": "object",

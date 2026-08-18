@@ -107,6 +107,8 @@ validation gaps:
 ### v0.6 — Visual evidence and target matrix
 
 - Implement `--target all` and isolated per-target failure reporting.
+  Implemented with benchmark-family selection, atomic child bundles, child
+  manifest hashes, preserved failures, and semantic matrix validation.
 - Render source skeleton and both robot results side by side.
 - Export MP4, plots, and a compact HTML report from the same manifest.
 - Gate: one command produces a reviewable comparison with provenance and no

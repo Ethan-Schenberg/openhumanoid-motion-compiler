@@ -43,7 +43,7 @@ from .quality import (
     validate_quality_report,
 )
 from .replay import replay_mujoco
-from .simulation import build_simulation_bundle
+from .simulation import build_simulation_bundle, build_simulation_matrix
 from .vendor import (
     default_cache_dir,
     import_official_artifact,
@@ -328,8 +328,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--target",
         required=True,
         help=(
-            "target registry key, such as unitree-g1-contract-fixture, "
-            "unitree-g1, or agibot-x2-ultra"
+            "target registry key, such as unitree-g1, agibot-x2-ultra, or all"
         ),
     )
     simulate.add_argument(
@@ -439,6 +438,13 @@ def build_parser() -> argparse.ArgumentParser:
         default=default_project_root()
         / "schemas"
         / "landmark-coverage-v0.1.schema.json",
+    )
+    simulate.add_argument(
+        "--matrix-schema",
+        type=Path,
+        default=default_project_root()
+        / "schemas"
+        / "simulation-matrix-v0.1.schema.json",
     )
 
     vendor = subcommands.add_parser("vendor", help="manage vendor SDK dependencies")
@@ -907,6 +913,38 @@ def run(args: argparse.Namespace) -> int:
         return 0
 
     if args.command == "simulate":
+        if args.target == "all":
+            matrix = build_simulation_matrix(
+                source_path=args.document,
+                source_license=args.source_license,
+                output_dir=args.output,
+                registry_path=args.targets,
+                registry_schema_path=args.target_schema,
+                matrix_schema_path=args.matrix_schema,
+                vendor_lock_path=args.lock,
+                cache_dir=args.cache_dir,
+                project_root=default_project_root(),
+                motion_schema_path=args.schema,
+                profile_schema_path=args.profile_schema,
+                mapping_schema_path=args.mapping_schema,
+                fixture_schema_path=args.fixture_schema,
+                bundle_schema_path=args.bundle_schema,
+                canonical_schema_path=args.canonical_schema,
+                source_convention=args.source_convention,
+                source_length_unit=args.source_length_unit,
+                quality_schema_path=args.quality_schema,
+                ik_task_map_schema_path=args.ik_task_map_schema,
+                ik_problem_schema_path=args.ik_problem_schema,
+                ik_result_schema_path=args.ik_result_schema,
+                landmark_schema_path=args.landmark_schema,
+            )
+            summary = matrix["summary"]
+            print(
+                f"simulation matrix: {args.output.expanduser().resolve()} "
+                f"(status={summary['status']}, passed={summary['passed_count']}/"
+                f"{summary['target_count']})"
+            )
+            return 0 if summary["status"] == "pass" else 1
         manifest = build_simulation_bundle(
             source_path=args.document,
             source_license=args.source_license,

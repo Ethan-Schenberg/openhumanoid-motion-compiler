@@ -145,6 +145,15 @@ against the official Unitree G1 29DoF or AgiBot X2 Ultra MuJoCo model:
   --source-length-unit m \
   --output build/agibot-x2-multilimb \
   --cache-dir .ohmc-cache
+
+# Auto-select the compatible benchmark family and isolate every target result
+.venv/bin/ohmc simulate examples/full_body_motion.bvh \
+  --target all \
+  --source-license CC0-1.0 \
+  --source-convention right_handed_x_forward_y_left_z_up \
+  --source-length-unit m \
+  --output build/full-body-matrix \
+  --cache-dir .ohmc-cache
 ```
 
 These are headless kinematic `mj_forward` replays. The official targets now run
@@ -152,6 +161,7 @@ a constrained partial-body IK proof on each vendor model, while the manifest
 still explicitly marks whole-body IK, closed-loop dynamics, and hardware
 transport as unavailable. See [the IK contract](docs/IK_CONTRACT.md) and
 [landmark coverage contract](docs/LANDMARK_COVERAGE.md), plus the
+[target matrix contract](docs/TARGET_MATRIX.md) and
 [project roadmap](docs/ROADMAP.md), for the exact boundary and acceptance gates.
 
 Validate the reference Motion IR artifact:

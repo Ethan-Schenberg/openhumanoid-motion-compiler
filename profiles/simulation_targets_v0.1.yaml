@@ -5,6 +5,7 @@ targets:
     semantic_mapping: profiles/mappings/simple_bvh_semantics_v1.yaml
     adapter: unitree-g1-lowcmd
     fidelity: synthetic_contract_fixture
+    input_contract: simple_motion_v1
     normalization:
       morphology_scale: 1.0
       rate_hz: 50.0
@@ -21,6 +22,7 @@ targets:
     ik_task_map: examples/ik_task_map_fixture.yaml
     adapter: unitree-g1-lowcmd
     fidelity: synthetic_contract_fixture
+    input_contract: simple_motion_v1
     normalization:
       morphology_scale: 1.0
       rate_hz: 50.0
@@ -37,6 +39,7 @@ targets:
     ik_task_map: profiles/ik/simple_left_knee_unitree_g1_v1.yaml
     adapter: unitree-g1-lowcmd
     fidelity: official_vendor_model
+    input_contract: simple_motion_v1
     normalization:
       morphology_scale: 1.0
       rate_hz: 50.0
@@ -55,6 +58,7 @@ targets:
     ik_task_map: profiles/ik/full_body_unitree_g1_v1.yaml
     adapter: unitree-g1-lowcmd
     fidelity: official_vendor_model
+    input_contract: full_body_landmarks_v1
     normalization:
       morphology_scale: 1.0
       rate_hz: 50.0
@@ -73,6 +77,7 @@ targets:
     ik_task_map: profiles/ik/simple_left_knee_agibot_x2_v1.yaml
     adapter: agibot-x2-joint-command-array
     fidelity: official_vendor_model
+    input_contract: simple_motion_v1
     normalization:
       morphology_scale: 1.0
       rate_hz: 50.0
@@ -91,6 +96,7 @@ targets:
     ik_task_map: profiles/ik/full_body_agibot_x2_v1.yaml
     adapter: agibot-x2-joint-command-array
     fidelity: official_vendor_model
+    input_contract: full_body_landmarks_v1
     normalization:
       morphology_scale: 1.0
       rate_hz: 50.0

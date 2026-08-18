@@ -28,6 +28,7 @@ from .ik import (
 )
 from .normalization import normalize_canonical_motion
 from .landmarks import landmark_coverage_report, validate_landmark_coverage
+from .landmarks import FULL_BODY_LANDMARKS
 from .profiles import (
     load_yaml_object,
     map_motion_ir,
@@ -78,6 +79,31 @@ def _schema_issues(document: dict[str, Any], schema: dict[str, Any]) -> list[str
     return issues
 
 
+def validate_simulation_matrix(
+    document: dict[str, Any], schema: dict[str, Any]
+) -> list[str]:
+    issues = _schema_issues(document, schema)
+    if issues:
+        return issues
+    rows = document["targets"]
+    names = [row["target"] for row in rows]
+    if len(names) != len(set(names)):
+        issues.append("targets: target names must be unique")
+    passed = sum(row["status"] == "pass" for row in rows)
+    failed = len(rows) - passed
+    summary = document["summary"]
+    if summary["target_count"] != len(rows):
+        issues.append("summary.target_count does not match targets")
+    if summary["passed_count"] != passed:
+        issues.append("summary.passed_count does not match targets")
+    if summary["failed_count"] != failed:
+        issues.append("summary.failed_count does not match targets")
+    expected_status = "pass" if failed == 0 else "fail"
+    if summary["status"] != expected_status:
+        issues.append(f"summary.status must be {expected_status!r}")
+    return issues
+
+
 def load_simulation_target(
     registry_path: Path, schema_path: Path, target_name: str
 ) -> dict[str, Any]:
@@ -92,6 +118,16 @@ def load_simulation_target(
             f"unknown simulation target {target_name!r}; available targets: {available}"
         )
     return targets[target_name]
+
+
+def load_simulation_targets(
+    registry_path: Path, schema_path: Path
+) -> dict[str, dict[str, Any]]:
+    registry = load_yaml_object(registry_path)
+    issues = _schema_issues(registry, load_json(schema_path))
+    if issues:
+        raise OhmcError("invalid simulation target registry: " + "; ".join(issues))
+    return registry["targets"]
 
 
 def _safe_relative_path(value: str) -> Path:
@@ -494,3 +530,128 @@ def build_simulation_bundle(
         shutil.rmtree(temporary, ignore_errors=True)
         raise
     return manifest
+
+
+def build_simulation_matrix(
+    *,
+    source_path: Path,
+    source_license: str,
+    output_dir: Path,
+    registry_path: Path,
+    registry_schema_path: Path,
+    matrix_schema_path: Path,
+    vendor_lock_path: Path,
+    cache_dir: Path,
+    project_root: Path,
+    motion_schema_path: Path,
+    profile_schema_path: Path,
+    mapping_schema_path: Path,
+    fixture_schema_path: Path,
+    bundle_schema_path: Path,
+    canonical_schema_path: Path,
+    source_convention: str,
+    source_length_unit: str,
+    quality_schema_path: Path,
+    ik_task_map_schema_path: Path,
+    ik_problem_schema_path: Path,
+    ik_result_schema_path: Path,
+    landmark_schema_path: Path,
+) -> dict[str, Any]:
+    """Run every registered target in isolation and package one atomic matrix."""
+    output_dir = output_dir.expanduser().resolve()
+    if output_dir.exists():
+        raise OhmcError(f"refusing to overwrite existing build directory: {output_dir}")
+    source_path = source_path.expanduser().resolve()
+    try:
+        source_bytes = source_path.read_bytes()
+    except FileNotFoundError as exc:
+        raise OhmcError(f"file not found: {source_path}") from exc
+    targets = load_simulation_targets(registry_path, registry_schema_path)
+    source_joint_names = {joint.name for joint in load_bvh(source_path).joints}
+    input_contract = (
+        "full_body_landmarks_v1"
+        if set(FULL_BODY_LANDMARKS) <= source_joint_names
+        else "simple_motion_v1"
+    )
+    compatible_targets = {
+        name: target
+        for name, target in targets.items()
+        if target["input_contract"] == input_contract
+    }
+    output_dir.parent.mkdir(parents=True, exist_ok=True)
+    temporary = Path(
+        tempfile.mkdtemp(prefix=f".{output_dir.name}-", dir=str(output_dir.parent))
+    )
+    rows: list[dict[str, Any]] = []
+    try:
+        for target_name in sorted(compatible_targets):
+            relative = Path("targets") / _safe_relative_path(target_name)
+            try:
+                build_simulation_bundle(
+                    source_path=source_path,
+                    source_license=source_license,
+                    output_dir=temporary / relative,
+                    target_name=target_name,
+                    registry_path=registry_path,
+                    registry_schema_path=registry_schema_path,
+                    vendor_lock_path=vendor_lock_path,
+                    cache_dir=cache_dir,
+                    project_root=project_root,
+                    motion_schema_path=motion_schema_path,
+                    profile_schema_path=profile_schema_path,
+                    mapping_schema_path=mapping_schema_path,
+                    fixture_schema_path=fixture_schema_path,
+                    bundle_schema_path=bundle_schema_path,
+                    canonical_schema_path=canonical_schema_path,
+                    source_convention=source_convention,
+                    source_length_unit=source_length_unit,
+                    quality_schema_path=quality_schema_path,
+                    ik_task_map_schema_path=ik_task_map_schema_path,
+                    ik_problem_schema_path=ik_problem_schema_path,
+                    ik_result_schema_path=ik_result_schema_path,
+                    landmark_schema_path=landmark_schema_path,
+                )
+                manifest_path = temporary / relative / "manifest.json"
+                rows.append(
+                    {
+                        "target": target_name,
+                        "status": "pass",
+                        "bundle": relative.as_posix(),
+                        "manifest_sha256": sha256_file(manifest_path),
+                    }
+                )
+            except OhmcError as exc:
+                rows.append(
+                    {"target": target_name, "status": "fail", "error": str(exc)}
+                )
+        passed_count = sum(row["status"] == "pass" for row in rows)
+        failed_count = len(rows) - passed_count
+        matrix = {
+            "schema": "ohmc.simulation_matrix/v0.1",
+            "source": {
+                "sha256": hashlib.sha256(source_bytes).hexdigest(),
+                "license": source_license,
+                "convention": source_convention,
+                "length_unit": source_length_unit,
+                "input_contract": input_contract,
+            },
+            "targets": rows,
+            "summary": {
+                "status": "pass" if failed_count == 0 else "fail",
+                "target_count": len(rows),
+                "passed_count": passed_count,
+                "failed_count": failed_count,
+            },
+            "hardware_commands_sent": False,
+        }
+        issues = validate_simulation_matrix(matrix, load_json(matrix_schema_path))
+        if issues:
+            raise OhmcError(
+                "generated invalid simulation matrix: " + "; ".join(issues)
+            )
+        _write_json(temporary / "matrix-manifest.json", matrix)
+        temporary.replace(output_dir)
+        return matrix
+    except Exception:
+        shutil.rmtree(temporary, ignore_errors=True)
+        raise
