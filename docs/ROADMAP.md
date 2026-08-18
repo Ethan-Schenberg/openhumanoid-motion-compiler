@@ -1,6 +1,7 @@
 # OHMC North-Star Roadmap
 
-Status: active roadmap  
+Status: active roadmap
+
 North star: licensed human motion to reproducible dual-vendor simulation evidence
 
 ## The higher target
