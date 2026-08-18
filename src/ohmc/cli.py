@@ -7,6 +7,9 @@ import json
 import sys
 from pathlib import Path
 
+from jsonschema import Draft202012Validator
+
+from .adapters import SUPPORTED_ADAPTERS, encode_vendor_fixture
 from .bvh import bvh_to_motion_ir, load_bvh
 from .errors import OhmcError
 from .ir import load_json, validate_motion_ir
@@ -109,6 +112,32 @@ def build_parser() -> argparse.ArgumentParser:
         "--mapping-schema",
         type=Path,
         default=default_project_root() / "schemas" / "semantic-map-v0.1.schema.json",
+    )
+
+    encode_fixture = subcommands.add_parser(
+        "encode-fixture", help="encode a non-executable vendor interface-order fixture"
+    )
+    encode_fixture.add_argument("document", type=Path)
+    encode_fixture.add_argument("--robot", type=Path, required=True)
+    encode_fixture.add_argument("--adapter", choices=SUPPORTED_ADAPTERS, required=True)
+    encode_fixture.add_argument("--output", type=Path, required=True)
+    encode_fixture.add_argument("--force", action="store_true")
+    encode_fixture.add_argument(
+        "--schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "motion-ir-v0.1.schema.json",
+    )
+    encode_fixture.add_argument(
+        "--profile-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "robot-profile-v0.1.schema.json",
+    )
+    encode_fixture.add_argument(
+        "--fixture-schema",
+        type=Path,
+        default=default_project_root()
+        / "schemas"
+        / "vendor-interface-fixture-v0.1.schema.json",
     )
 
     vendor = subcommands.add_parser("vendor", help="manage vendor SDK dependencies")
@@ -261,6 +290,38 @@ def run(args: argparse.Namespace) -> int:
         print(
             f"mapped Motion IR: {output} ({len(mapped['trajectory']['joints'])} joints, "
             f"profile={profile['id']})"
+        )
+        return 0
+
+    if args.command == "encode-fixture":
+        output = args.output.expanduser().resolve()
+        if output.exists() and not args.force:
+            raise OhmcError(f"refusing to overwrite existing output: {output}")
+        motion = load_json(args.document)
+        input_issues = validate_motion_ir(motion, load_json(args.schema))
+        if input_issues:
+            raise OhmcError(
+                "cannot encode invalid Motion IR: " + "; ".join(input_issues)
+            )
+        profile = load_yaml_object(args.robot)
+        profile_issues = validate_robot_profile(
+            profile, load_json(args.profile_schema)
+        )
+        if profile_issues:
+            raise OhmcError("invalid robot profile: " + "; ".join(profile_issues))
+        fixture = encode_vendor_fixture(motion, profile, args.adapter)
+        fixture_issues = []
+        validator = Draft202012Validator(load_json(args.fixture_schema))
+        for error in validator.iter_errors(fixture):
+            location = ".".join(str(part) for part in error.absolute_path) or "$"
+            fixture_issues.append(f"{location}: {error.message}")
+        if fixture_issues:
+            raise OhmcError("generated invalid vendor fixture: " + "; ".join(fixture_issues))
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(fixture, indent=2) + "\n", encoding="utf-8")
+        print(
+            f"encoded non-executable fixture: {output} "
+            f"({len(fixture['frames'])} frames, adapter={args.adapter})"
         )
         return 0
 

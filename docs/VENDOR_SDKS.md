@@ -31,10 +31,16 @@ Every vendor backend advances through the same levels:
 
 v0.1 targets L3 for Unitree and at least L2 for AgiBot X2. The X2 target rises to L3 when the official model and simulation path are reproducibly packaged.
 
-Current implemented status (2026-08-16): both vendor profiles have reached L1.
+Current implemented status (2026-08-18): both vendor profiles have reached L1.
 Their schemas, model hashes, joint orders, whitelists, limits, exclusions, and
-offline semantic mappings are tested in CI. SDK message adapters have not yet
-reached L2, and no hardware transport is present.
+offline semantic mappings are tested in CI. Both platforms now also have
+schema-validated interface-order fixtures: Unitree G1 `LowCmd` and AgiBot X2
+`JointCommandArray`. These fixtures are pre-L2 contract evidence, not a claim
+that either SDK adapter has compiled. SDK message adapters have not yet reached
+L2, and no hardware transport is present.
+
+The exact fixture format and its non-execution boundary are documented in
+[`INTERFACE_FIXTURES.md`](INTERFACE_FIXTURES.md).
 
 ## Unitree integration
 

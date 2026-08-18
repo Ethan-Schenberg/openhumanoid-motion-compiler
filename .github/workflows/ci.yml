@@ -40,5 +40,7 @@ jobs:
           ohmc map-joints build/simple_motion.json --robot profiles/agibot_x2_ultra_aimdk_v1.yaml --mapping profiles/mappings/simple_bvh_semantics_v1.yaml --output build/agibot_x2_motion.json
           ohmc validate-ir build/unitree_g1_motion.json
           ohmc validate-ir build/agibot_x2_motion.json
+          ohmc encode-fixture build/unitree_g1_motion.json --robot profiles/unitree_g1_29dof.yaml --adapter unitree-g1-lowcmd --output build/unitree_g1_lowcmd_fixture.json
+          ohmc encode-fixture build/agibot_x2_motion.json --robot profiles/agibot_x2_ultra_aimdk_v1.yaml --adapter agibot-x2-joint-command-array --output build/agibot_x2_joint_command_fixture.json
       - name: Validate vendor lock
         run: ohmc vendor --cache-dir .ohmc-cache status

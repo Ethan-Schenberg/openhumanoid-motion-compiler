@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openhumanoid.dev/schemas/vendor-interface-fixture-v0.1.schema.json",
+  "title": "OHMC non-executable vendor interface fixture v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "adapter", "interface", "vendor", "robot_profile", "model_sha256", "source_motion_sha256", "purpose", "transport", "executable", "complete", "warnings", "frames"],
+  "properties": {
+    "schema": {"const": "ohmc.vendor_interface_fixture/v0.1"},
+    "adapter": {"enum": ["unitree-g1-lowcmd", "agibot-x2-joint-command-array"]},
+    "interface": {"type": "string", "minLength": 1},
+    "vendor": {"enum": ["Unitree", "AgiBot"]},
+    "robot_profile": {"type": "string", "minLength": 1},
+    "model_sha256": {"$ref": "#/$defs/sha256"},
+    "source_motion_sha256": {"$ref": "#/$defs/sha256"},
+    "purpose": {"const": "interface_order_conformance_only"},
+    "transport": {"const": "disabled"},
+    "executable": {"const": false},
+    "complete": {"type": "boolean"},
+    "warnings": {"type": "array", "minItems": 3, "items": {"type": "string", "minLength": 1}},
+    "frames": {"type": "array", "minItems": 1, "items": {"type": "object"}}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"adapter": {"const": "unitree-g1-lowcmd"}}},
+      "then": {
+        "properties": {
+          "interface": {"const": "unitree_hg.msg.dds_.LowCmd_"},
+          "vendor": {"const": "Unitree"},
+          "frames": {"items": {"$ref": "#/$defs/unitreeFrame"}}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"adapter": {"const": "agibot-x2-joint-command-array"}}},
+      "then": {
+        "properties": {
+          "interface": {"const": "aimdk_msgs/msg/JointCommandArray"},
+          "vendor": {"const": "AgiBot"},
+          "frames": {"items": {"$ref": "#/$defs/agibotFrame"}}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nullableNumber": {"type": ["number", "null"]},
+    "unitreeMotor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index", "name", "present", "mode", "q", "dq", "kp", "kd", "tau"],
+      "properties": {
+        "index": {"type": "integer", "minimum": 0, "maximum": 28},
+        "name": {"type": "string", "minLength": 1},
+        "present": {"type": "boolean"},
+        "mode": {"type": "null"},
+        "q": {"$ref": "#/$defs/nullableNumber"},
+        "dq": {"type": "null"},
+        "kp": {"type": "null"},
+        "kd": {"type": "null"},
+        "tau": {"type": "null"}
+      }
+    },
+    "unitreeFrame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["time", "message"],
+      "properties": {
+        "time": {"type": "number", "minimum": 0},
+        "message": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["topic", "mode_pr", "mode_machine", "motor_cmd"],
+          "properties": {
+            "topic": {"const": "rt/lowcmd"},
+            "mode_pr": {"type": "null"},
+            "mode_machine": {"type": "null"},
+            "motor_cmd": {"type": "array", "minItems": 29, "maxItems": 29, "items": {"$ref": "#/$defs/unitreeMotor"}}
+          }
+        }
+      }
+    },
+    "agibotJoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index", "name", "available", "present", "position", "velocity", "effort", "stiffness", "damping"],
+      "properties": {
+        "index": {"type": "integer", "minimum": 0},
+        "name": {"type": "string", "minLength": 1},
+        "available": {"type": "boolean"},
+        "present": {"type": "boolean"},
+        "position": {"$ref": "#/$defs/nullableNumber"},
+        "velocity": {"type": "null"},
+        "effort": {"type": "null"},
+        "stiffness": {"type": "null"},
+        "damping": {"type": "null"}
+      }
+    },
+    "agibotMessage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["group", "topic", "interface", "header", "joints"],
+      "properties": {
+        "group": {"enum": ["leg", "waist", "arm", "head"]},
+        "topic": {"type": "string", "pattern": "^/aima/hal/joint/(leg|waist|arm|head)/command$"},
+        "interface": {"const": "aimdk_msgs/msg/JointCommandArray"},
+        "header": {"type": "null"},
+        "joints": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/agibotJoint"}}
+      }
+    },
+    "agibotFrame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["time", "messages"],
+      "properties": {
+        "time": {"type": "number", "minimum": 0},
+        "messages": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"$ref": "#/$defs/agibotMessage"}}
+      }
+    }
+  }
+}

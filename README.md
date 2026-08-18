@@ -142,11 +142,25 @@ artifact into their declared joint contracts:
   --robot profiles/agibot_x2_ultra_aimdk_v1.yaml \
   --mapping profiles/mappings/simple_bvh_semantics_v1.yaml \
   --output build/agibot_x2_motion.json
+
+.venv/bin/ohmc encode-fixture build/unitree_g1_motion.json \
+  --robot profiles/unitree_g1_29dof.yaml \
+  --adapter unitree-g1-lowcmd \
+  --output build/unitree_g1_lowcmd_fixture.json
+
+.venv/bin/ohmc encode-fixture build/agibot_x2_motion.json \
+  --robot profiles/agibot_x2_ultra_aimdk_v1.yaml \
+  --adapter agibot-x2-joint-command-array \
+  --output build/agibot_x2_joint_command_fixture.json
 ```
 
 Both profiles set `hardware_transport: disabled`. The current mapping example
 demonstrates deterministic joint ordering, sign conversion, and model-limit
-checks; it is not whole-body IK or a physical execution path.
+checks. The fixture encoders preserve the official `LowCmd` and
+`JointCommandArray` field/order contracts while leaving modes, gains, effort,
+damping, headers, and missing positions unset. They do not serialize middleware
+messages, publish topics, perform whole-body IK, or create a physical execution
+path. See [the fixture contract](docs/INTERFACE_FIXTURES.md).
 
 Inspect and verify vendor SDK dependencies:
 
@@ -218,7 +232,9 @@ Implemented foundation:
 - Optional headless MuJoCo joint mapping and kinematic replay validation with a
   machine-readable report.
 - Schema-validated Unitree G1 29DoF and AgiBot X2 Ultra offline profiles with
-  explicit joint whitelists, exclusions, limits, and semantic mapping tests.
+  explicit joint ordering, limits, grouping, and exclusions.
+- Non-executable Unitree G1 `LowCmd` and AgiBot X2 `JointCommandArray` interface
+  fixtures with schema validation and CI conformance tests.
 
 Canonical root transforms, full-body semantic mapping, constrained IK compiler
 passes, and dynamic simulator playback are the next implementation milestones.
