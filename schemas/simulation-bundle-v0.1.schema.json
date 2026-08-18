@@ -27,6 +27,7 @@
         "replay",
         "motion_validation",
         "motion_quality",
+        "landmark_coverage",
         "ik",
         "hardware_commands_sent"
       ],
@@ -34,6 +35,7 @@
         "replay": { "const": "pass" },
         "motion_validation": { "enum": ["pass", "warning", "fail"] },
         "motion_quality": { "enum": ["pass", "warning"] },
+        "landmark_coverage": { "enum": ["pass", "warning"] },
         "ik": { "enum": ["not_run", "pass"] },
         "hardware_commands_sent": { "const": false }
       }
@@ -48,6 +50,7 @@
         "canonical_timeline_resampling",
         "trajectory_derivatives",
         "mapping_completeness_report",
+        "landmark_coverage_report",
         "headless_kinematic_replay",
         "vendor_interface_fixture",
         "constrained_partial_body_ik",
@@ -61,6 +64,7 @@
         "canonical_timeline_resampling": { "type": "boolean" },
         "trajectory_derivatives": { "type": "boolean" },
         "mapping_completeness_report": { "type": "boolean" },
+        "landmark_coverage_report": { "type": "boolean" },
         "semantic_joint_mapping": { "type": "boolean" },
         "headless_kinematic_replay": { "type": "boolean" },
         "vendor_interface_fixture": { "type": "boolean" },
@@ -104,6 +108,7 @@
         "motion",
         "replay_report",
         "quality_report",
+        "landmark_report",
         "interface_fixture",
         "robot_profile",
         "semantic_mapping"
@@ -115,6 +120,7 @@
         "motion": { "$ref": "#/$defs/artifact" },
         "replay_report": { "$ref": "#/$defs/artifact" },
         "quality_report": { "$ref": "#/$defs/artifact" },
+        "landmark_report": { "$ref": "#/$defs/artifact" },
         "interface_fixture": { "$ref": "#/$defs/artifact" },
         "robot_profile": { "$ref": "#/$defs/artifact" },
         "semantic_mapping": { "$ref": "#/$defs/artifact" },

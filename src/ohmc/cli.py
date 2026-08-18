@@ -30,6 +30,7 @@ from .ik import (
     validate_ik_task_map,
 )
 from .normalization import normalize_canonical_motion
+from .landmarks import landmark_coverage_report, validate_landmark_coverage
 from .profiles import (
     load_yaml_object,
     map_motion_ir,
@@ -132,6 +133,36 @@ def build_parser() -> argparse.ArgumentParser:
         default=default_project_root()
         / "schemas"
         / "canonical-motion-v0.1.schema.json",
+    )
+
+    landmark_report = subcommands.add_parser(
+        "landmark-report",
+        help="report canonical source and IK task landmark coverage",
+    )
+    landmark_report.add_argument("document", type=Path)
+    landmark_report.add_argument("--task-map", type=Path)
+    landmark_report.add_argument("--output", type=Path, required=True)
+    landmark_report.add_argument("--force", action="store_true")
+    landmark_report.add_argument("--require-full-source", action="store_true")
+    landmark_report.add_argument("--require-full-tasks", action="store_true")
+    landmark_report.add_argument(
+        "--canonical-schema",
+        type=Path,
+        default=default_project_root()
+        / "schemas"
+        / "canonical-motion-v0.1.schema.json",
+    )
+    landmark_report.add_argument(
+        "--task-map-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "ik-task-map-v0.1.schema.json",
+    )
+    landmark_report.add_argument(
+        "--report-schema",
+        type=Path,
+        default=default_project_root()
+        / "schemas"
+        / "landmark-coverage-v0.1.schema.json",
     )
     retarget_ik.add_argument(
         "--profile-schema",
@@ -402,6 +433,13 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=default_project_root() / "schemas" / "ik-result-v0.1.schema.json",
     )
+    simulate.add_argument(
+        "--landmark-schema",
+        type=Path,
+        default=default_project_root()
+        / "schemas"
+        / "landmark-coverage-v0.1.schema.json",
+    )
 
     vendor = subcommands.add_parser("vendor", help="manage vendor SDK dependencies")
     vendor.add_argument(
@@ -623,6 +661,56 @@ def run(args: argparse.Namespace) -> int:
         )
         return 0 if result["status"] == "pass" else 1
 
+    if args.command == "landmark-report":
+        output = args.output.expanduser().resolve()
+        if output.exists() and not args.force:
+            raise OhmcError(f"refusing to overwrite existing output: {output}")
+        canonical = load_json(args.document)
+        canonical_issues = validate_canonical_motion(
+            canonical, load_json(args.canonical_schema)
+        )
+        if canonical_issues:
+            raise OhmcError(
+                "cannot inspect invalid canonical motion: "
+                + "; ".join(canonical_issues)
+            )
+        task_map = None
+        if args.task_map:
+            task_map = load_yaml_object(args.task_map)
+            task_issues = validate_ik_task_map(
+                task_map, load_json(args.task_map_schema)
+            )
+            if task_issues:
+                raise OhmcError("invalid IK task map: " + "; ".join(task_issues))
+        report = landmark_coverage_report(canonical, task_map)
+        report_issues = validate_landmark_coverage(
+            report, load_json(args.report_schema)
+        )
+        if report_issues:
+            raise OhmcError(
+                "generated invalid landmark report: " + "; ".join(report_issues)
+            )
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        task_coverage = report["task_coverage"]
+        task_text = (
+            "not evaluated"
+            if task_coverage is None
+            else f"{task_coverage['present_count']}/{task_coverage['required_count']}"
+        )
+        print(
+            f"landmark coverage: source="
+            f"{report['source']['present_count']}/{report['source']['required_count']}, "
+            f"tasks={task_text}, status={report['status']}"
+        )
+        strict_failure = (
+            args.require_full_source and not report["source"]["complete"]
+        ) or (
+            args.require_full_tasks
+            and (task_coverage is None or not task_coverage["complete"])
+        )
+        return 1 if strict_failure else 0
+
     if args.command == "import-bvh":
         output = args.output.expanduser().resolve()
         if output.exists() and not args.force:
@@ -841,6 +929,7 @@ def run(args: argparse.Namespace) -> int:
             ik_task_map_schema_path=args.ik_task_map_schema,
             ik_problem_schema_path=args.ik_problem_schema,
             ik_result_schema_path=args.ik_result_schema,
+            landmark_schema_path=args.landmark_schema,
         )
         print(
             f"simulation bundle: {args.output.expanduser().resolve()} "

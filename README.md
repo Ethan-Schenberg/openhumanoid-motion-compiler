@@ -128,13 +128,31 @@ against the official Unitree G1 29DoF or AgiBot X2 Ultra MuJoCo model:
   --source-length-unit m \
   --output build/agibot-x2-ultra \
   --cache-dir .ohmc-cache
+
+# Larger bilateral legs, waist, and arms benchmark (still labelled partial IK)
+.venv/bin/ohmc simulate examples/full_body_motion.bvh \
+  --target unitree-g1-multilimb-benchmark \
+  --source-license CC0-1.0 \
+  --source-convention right_handed_x_forward_y_left_z_up \
+  --source-length-unit m \
+  --output build/unitree-g1-multilimb \
+  --cache-dir .ohmc-cache
+
+.venv/bin/ohmc simulate examples/full_body_motion.bvh \
+  --target agibot-x2-ultra-multilimb-benchmark \
+  --source-license CC0-1.0 \
+  --source-convention right_handed_x_forward_y_left_z_up \
+  --source-length-unit m \
+  --output build/agibot-x2-multilimb \
+  --cache-dir .ohmc-cache
 ```
 
 These are headless kinematic `mj_forward` replays. The official targets now run
 a constrained partial-body IK proof on each vendor model, while the manifest
 still explicitly marks whole-body IK, closed-loop dynamics, and hardware
 transport as unavailable. See [the IK contract](docs/IK_CONTRACT.md) and
-[project roadmap](docs/ROADMAP.md) for the exact boundary and acceptance gates.
+[landmark coverage contract](docs/LANDMARK_COVERAGE.md), plus the
+[project roadmap](docs/ROADMAP.md), for the exact boundary and acceptance gates.
 
 Validate the reference Motion IR artifact:
 
@@ -161,6 +179,9 @@ into a prototype Motion IR artifact:
   --task-map examples/ik_task_map_fixture.yaml \
   --model examples/ik_contract_fixture.xml \
   --output build/ik-contract
+.venv/bin/ohmc landmark-report build/canonical-motion-normalized.json \
+  --task-map examples/ik_task_map_fixture.yaml \
+  --output build/landmark-coverage.json
 .venv/bin/ohmc import-bvh examples/simple_motion.bvh \
   --source-license CC0-1.0 \
   --output build/simple_motion.json
@@ -334,8 +355,17 @@ Implemented foundation:
   local rotations, metre offsets, quaternions, and deterministic world poses.
 - Non-uniform timestamp velocity/acceleration derivation, profile limit checks,
   and explicit per-robot mapping-completeness reports with strict CLI gates.
+- Uniform morphology scaling, exact-duration resampling, shortest-arc SLERP,
+  FK recomputation, and pass-level input/output hash chaining.
+- Solver-neutral IK task/problem/result schemas plus a bounded deterministic DLS
+  reference solver with explicit per-frame failures, residuals, and active
+  joint limits.
+- Partial-body IK integrated into official G1 and X2 evidence bundles without
+  claiming whole-body coverage.
+- A 16-landmark original CC0 full-body BVH benchmark and machine-readable source
+  and IK-task coverage reports with strict CLI gates.
 
-Canonical root transforms, full-body semantic mapping, constrained IK compiler
-passes, dynamic simulator playback, and rendered comparison video are the next
-implementation milestones.
+Full bilateral task coverage, orientation/contact constraints, dynamic
+controller playback, and rendered comparison video are the next implementation
+milestones.
 Real-robot execution remains outside v0.1.

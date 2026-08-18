@@ -49,10 +49,46 @@ targets:
         path: unitree_robots/g1/g1_29dof.xml
         expected_sha256: 423e28bd718b19f7a65cda539b6f794ddbb268b4b9bdbd85f4bd982b30729617
 
+  unitree-g1-multilimb-benchmark:
+    robot_profile: profiles/unitree_g1_29dof.yaml
+    semantic_mapping: profiles/mappings/simple_bvh_semantics_v1.yaml
+    ik_task_map: profiles/ik/full_body_unitree_g1_v1.yaml
+    adapter: unitree-g1-lowcmd
+    fidelity: official_vendor_model
+    normalization:
+      morphology_scale: 1.0
+      rate_hz: 50.0
+    simulator:
+      backend: mujoco
+      model:
+        kind: git_component
+        vendor: unitree
+        component: mujoco
+        path: unitree_robots/g1/g1_29dof.xml
+        expected_sha256: 423e28bd718b19f7a65cda539b6f794ddbb268b4b9bdbd85f4bd982b30729617
+
   agibot-x2-ultra:
     robot_profile: profiles/agibot_x2_ultra_aimdk_v1.yaml
     semantic_mapping: profiles/mappings/simple_bvh_semantics_v1.yaml
     ik_task_map: profiles/ik/simple_left_knee_agibot_x2_v1.yaml
+    adapter: agibot-x2-joint-command-array
+    fidelity: official_vendor_model
+    normalization:
+      morphology_scale: 1.0
+      rate_hz: 50.0
+    simulator:
+      backend: mujoco
+      model:
+        kind: zip_component
+        vendor: agibot_x2
+        component: urdf
+        path: X2_URDF-v1.3.0/x2_ultra.xml
+        expected_sha256: 4cbeae56a09ead4a0753ef912092f0c96bd7c79c7b0d7089d360eeace8a84033
+
+  agibot-x2-ultra-multilimb-benchmark:
+    robot_profile: profiles/agibot_x2_ultra_aimdk_v1.yaml
+    semantic_mapping: profiles/mappings/simple_bvh_semantics_v1.yaml
+    ik_task_map: profiles/ik/full_body_agibot_x2_v1.yaml
     adapter: agibot-x2-joint-command-array
     fidelity: official_vendor_model
     normalization:

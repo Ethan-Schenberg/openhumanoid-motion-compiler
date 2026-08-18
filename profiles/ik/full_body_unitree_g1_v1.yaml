@@ -1,0 +1,48 @@
+schema: ohmc.ik_task_map/v0.1
+id: full_body_unitree_g1_v1
+variables:
+  - left_hip_pitch
+  - left_hip_roll
+  - left_hip_yaw
+  - left_knee
+  - left_ankle_pitch
+  - left_ankle_roll
+  - right_hip_pitch
+  - right_hip_roll
+  - right_hip_yaw
+  - right_knee
+  - right_ankle_pitch
+  - right_ankle_roll
+  - waist_yaw
+  - waist_roll
+  - waist_pitch
+  - left_shoulder_pitch
+  - left_shoulder_roll
+  - left_shoulder_yaw
+  - left_elbow
+  - left_wrist_roll
+  - left_wrist_pitch
+  - left_wrist_yaw
+  - right_shoulder_pitch
+  - right_shoulder_roll
+  - right_shoulder_yaw
+  - right_elbow
+  - right_wrist_roll
+  - right_wrist_pitch
+  - right_wrist_yaw
+tasks:
+  - {id: chest_position, source_joint: Chest, target_frame: torso_link, weight: 1.0, tolerance_m: 0.005, scale: 0.2}
+  - {id: left_knee_position, source_joint: LeftKnee, target_frame: left_knee_link, weight: 1.0, tolerance_m: 0.005, scale: 1.0}
+  - {id: left_ankle_position, source_joint: LeftAnkle, target_frame: left_ankle_roll_link, weight: 1.0, tolerance_m: 0.005, scale: 1.0}
+  - {id: right_knee_position, source_joint: RightKnee, target_frame: right_knee_link, weight: 1.0, tolerance_m: 0.005, scale: 1.0}
+  - {id: right_ankle_position, source_joint: RightAnkle, target_frame: right_ankle_roll_link, weight: 1.0, tolerance_m: 0.005, scale: 1.0}
+  - {id: left_elbow_position, source_joint: LeftElbow, target_frame: left_elbow_link, weight: 1.0, tolerance_m: 0.005, scale: 0.2}
+  - {id: left_wrist_position, source_joint: LeftWrist, target_frame: left_wrist_yaw_link, weight: 1.0, tolerance_m: 0.005, scale: 0.2}
+  - {id: right_elbow_position, source_joint: RightElbow, target_frame: right_elbow_link, weight: 1.0, tolerance_m: 0.005, scale: 0.2}
+  - {id: right_wrist_position, source_joint: RightWrist, target_frame: right_wrist_yaw_link, weight: 1.0, tolerance_m: 0.005, scale: 0.2}
+solver:
+  max_iterations: 200
+  damping: 0.001
+  max_step_rad: 0.08
+  neutral_weight: 0.00001
+  temporal_weight: 0.0001

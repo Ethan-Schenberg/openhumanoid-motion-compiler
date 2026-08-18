@@ -27,6 +27,7 @@ from .ik import (
     validate_ik_task_map,
 )
 from .normalization import normalize_canonical_motion
+from .landmarks import landmark_coverage_report, validate_landmark_coverage
 from .profiles import (
     load_yaml_object,
     map_motion_ir,
@@ -237,6 +238,7 @@ def build_simulation_bundle(
     ik_task_map_schema_path: Path,
     ik_problem_schema_path: Path,
     ik_result_schema_path: Path,
+    landmark_schema_path: Path,
 ) -> dict[str, Any]:
     """Compile, map, replay, and encode an offline evidence bundle atomically."""
     output_dir = output_dir.expanduser().resolve()
@@ -314,6 +316,7 @@ def build_simulation_bundle(
     ik_problem = None
     ik_result = None
     ik_task_map_path = None
+    ik_task_map = None
     if "ik_task_map" in target:
         ik_task_map_path = project_root / _safe_relative_path(target["ik_task_map"])
         ik_task_map = load_yaml_object(ik_task_map_path)
@@ -354,6 +357,14 @@ def build_simulation_bundle(
         )
     else:
         mapped_motion = map_motion_ir(source_motion, profile, mapping)
+    landmark_report = landmark_coverage_report(canonical_motion, ik_task_map)
+    landmark_issues = validate_landmark_coverage(
+        landmark_report, load_json(landmark_schema_path)
+    )
+    if landmark_issues:
+        raise OhmcError(
+            "generated invalid landmark report: " + "; ".join(landmark_issues)
+        )
     mapped_issues = validate_motion_ir(mapped_motion, motion_schema)
     if mapped_issues:
         raise OhmcError("generated invalid mapped Motion IR: " + "; ".join(mapped_issues))
@@ -389,6 +400,7 @@ def build_simulation_bundle(
             "motion": "motion.json",
             "replay_report": "replay-report.json",
             "quality_report": "quality-report.json",
+            "landmark_report": "landmark-report.json",
             "interface_fixture": "interface-fixture.json",
             "robot_profile": "configs/robot-profile.yaml",
             "semantic_mapping": "configs/semantic-mapping.yaml",
@@ -407,6 +419,7 @@ def build_simulation_bundle(
         _write_json(temporary / artifacts["motion"], mapped_motion)
         _write_json(temporary / artifacts["replay_report"], replay_report)
         _write_json(temporary / artifacts["quality_report"], quality_report)
+        _write_json(temporary / artifacts["landmark_report"], landmark_report)
         _write_json(temporary / artifacts["interface_fixture"], fixture)
         if ik_problem is not None and ik_result is not None and ik_task_map_path:
             _write_json(temporary / artifacts["ik_problem"], ik_problem)
@@ -429,6 +442,7 @@ def build_simulation_bundle(
                 "replay": replay_report["status"],
                 "motion_validation": mapped_motion["validation"]["status"],
                 "motion_quality": quality_report["status"],
+                "landmark_coverage": landmark_report["status"],
                 "ik": "pass" if ik_result is not None else "not_run",
                 "hardware_commands_sent": False,
             },
@@ -438,6 +452,7 @@ def build_simulation_bundle(
                 "canonical_timeline_resampling": True,
                 "trajectory_derivatives": True,
                 "mapping_completeness_report": True,
+                "landmark_coverage_report": True,
                 "semantic_joint_mapping": True,
                 "headless_kinematic_replay": True,
                 "vendor_interface_fixture": True,
@@ -462,6 +477,7 @@ def build_simulation_bundle(
             },
             "warnings": mapped_motion["validation"]["issues"]
             + quality_report["warnings"]
+            + landmark_report["warnings"]
             + [
                 "replay is kinematic mj_forward validation, not closed-loop physics",
                 "simulation success is not evidence of physical-robot safety",

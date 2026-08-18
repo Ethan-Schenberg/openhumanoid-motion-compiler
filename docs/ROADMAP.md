@@ -74,6 +74,8 @@ validation gaps:
   canonicalization and morphology/timeline normalization.
 - Gate: mirrored, rotated, and different-height fixtures produce stable expected
   canonical coordinates on Python 3.10–3.12.
+- An original CC0 16-landmark/51-channel full-body BVH fixture and strict source
+  coverage report are implemented; richer morphology variants remain pending.
 
 ### v0.4 — Full-body constrained IK
 
@@ -82,6 +84,10 @@ validation gaps:
 - G1 and X2 official-model bundles execute a three-variable left-hip position
   task with explicit per-frame residuals and failure states. This is labelled
   partial-body IK, not whole-body IK.
+- A larger 9-task multi-limb benchmark now drives all 29 G1 and all 30 available
+  X2 command variables. Both official models solve all three CC0 benchmark
+  frames below 5 mm, while the coverage report still exposes the 9/16 landmark
+  gap.
 - Solve all configured legs, waist, arms, and available head joints.
 - Enforce profile position limits and report residuals per frame.
 - Add foot-contact preservation, self-collision checks, smoothing, and explicit

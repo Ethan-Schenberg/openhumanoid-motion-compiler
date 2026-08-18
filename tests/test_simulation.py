@@ -66,6 +66,7 @@ def test_one_command_simulation_builds_auditable_bundle(tmp_path: Path) -> None:
     assert manifest["result"] == {
         "hardware_commands_sent": False,
         "ik": "not_run",
+        "landmark_coverage": "warning",
         "motion_quality": "warning",
         "motion_validation": "warning",
         "replay": "pass",
@@ -76,6 +77,7 @@ def test_one_command_simulation_builds_auditable_bundle(tmp_path: Path) -> None:
     assert manifest["capabilities"]["canonical_timeline_resampling"] is True
     assert manifest["capabilities"]["trajectory_derivatives"] is True
     assert manifest["capabilities"]["mapping_completeness_report"] is True
+    assert manifest["capabilities"]["landmark_coverage_report"] is True
     assert manifest["capabilities"]["constrained_partial_body_ik"] is False
     assert manifest["capabilities"]["constrained_whole_body_ik"] is False
     assert manifest["capabilities"]["dynamic_controller_simulation"] is False
@@ -96,6 +98,9 @@ def test_one_command_simulation_builds_auditable_bundle(tmp_path: Path) -> None:
     assert quality["status"] == "warning"
     assert quality["mapping"]["mapped_joint_count"] == 2
     assert quality["mapping"]["controllable_joint_count"] == 29
+    landmarks = json.loads((output / "landmark-report.json").read_text())
+    assert landmarks["source"]["present_count"] == 2
+    assert landmarks["status"] == "warning"
 
     for artifact in manifest["artifacts"].values():
         path = output / artifact["path"]

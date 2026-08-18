@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openhumanoid.dev/schemas/landmark-coverage-v0.1.schema.json",
+  "title": "OHMC canonical landmark coverage report v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "canonical_motion_sha256",
+    "standard",
+    "source",
+    "task_coverage",
+    "status",
+    "warnings",
+    "hardware_commands_sent"
+  ],
+  "properties": {
+    "schema": { "const": "ohmc.landmark_coverage/v0.1" },
+    "canonical_motion_sha256": { "$ref": "#/$defs/sha256" },
+    "standard": { "const": "ohmc.full_body_landmarks/v0.1" },
+    "source": { "$ref": "#/$defs/coverage" },
+    "task_coverage": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/coverage" },
+            {
+              "type": "object",
+              "required": ["task_map"],
+              "properties": {
+                "task_map": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "status": { "enum": ["pass", "warning"] },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "hardware_commands_sent": { "const": false }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "present",
+        "missing",
+        "required_count",
+        "present_count",
+        "coverage_ratio",
+        "complete"
+      ],
+      "properties": {
+        "task_map": { "type": "string", "minLength": 1 },
+        "required": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "present": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "missing": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "required_count": { "type": "integer", "minimum": 1 },
+        "present_count": { "type": "integer", "minimum": 0 },
+        "coverage_ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "complete": { "type": "boolean" }
+      }
+    }
+  }
+}

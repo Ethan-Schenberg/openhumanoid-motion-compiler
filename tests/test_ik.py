@@ -152,3 +152,31 @@ def test_retarget_ik_cli_builds_atomic_bundle_and_refuses_overwrite(
     assert json.loads((output / "ik-result.json").read_text())["status"] == "pass"
     assert (output / "motion.json").is_file()
     assert main(args) == 2
+
+
+@pytest.mark.parametrize(
+    ("name", "variable_count"),
+    [
+        ("full_body_unitree_g1_v1.yaml", 29),
+        ("full_body_agibot_x2_v1.yaml", 30),
+    ],
+)
+def test_multilimb_vendor_task_maps_are_schema_valid_and_cover_nine_tasks(
+    name: str, variable_count: int
+) -> None:
+    task_map = load_yaml_object(ROOT / "profiles" / "ik" / name)
+
+    assert validate_ik_task_map(task_map, TASK_MAP_SCHEMA) == []
+    assert len(task_map["variables"]) == variable_count
+    assert len(task_map["tasks"]) == 9
+    assert {task["source_joint"] for task in task_map["tasks"]} == {
+        "Chest",
+        "LeftKnee",
+        "LeftAnkle",
+        "RightKnee",
+        "RightAnkle",
+        "LeftElbow",
+        "LeftWrist",
+        "RightElbow",
+        "RightWrist",
+    }

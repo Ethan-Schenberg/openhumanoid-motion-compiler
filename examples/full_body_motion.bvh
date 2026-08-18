@@ -1,0 +1,107 @@
+HIERARCHY
+ROOT Hips
+{
+  OFFSET 0.0 0.0 0.9
+  CHANNELS 6 Xposition Yposition Zposition Xrotation Yrotation Zrotation
+  JOINT Spine
+  {
+    OFFSET 0.0 0.0 0.2
+    CHANNELS 3 Xrotation Yrotation Zrotation
+    JOINT Chest
+    {
+      OFFSET 0.0 0.0 0.2
+      CHANNELS 3 Xrotation Yrotation Zrotation
+      JOINT Head
+      {
+        OFFSET 0.0 0.0 0.25
+        CHANNELS 3 Xrotation Yrotation Zrotation
+        End Site
+        {
+          OFFSET 0.0 0.0 0.12
+        }
+      }
+      JOINT LeftShoulder
+      {
+        OFFSET 0.0 0.18 0.12
+        CHANNELS 3 Xrotation Yrotation Zrotation
+        JOINT LeftElbow
+        {
+          OFFSET 0.0 0.0 -0.28
+          CHANNELS 3 Xrotation Yrotation Zrotation
+          JOINT LeftWrist
+          {
+            OFFSET 0.0 0.0 -0.24
+            CHANNELS 3 Xrotation Yrotation Zrotation
+            End Site
+            {
+              OFFSET 0.0 0.0 -0.1
+            }
+          }
+        }
+      }
+      JOINT RightShoulder
+      {
+        OFFSET 0.0 -0.18 0.12
+        CHANNELS 3 Xrotation Yrotation Zrotation
+        JOINT RightElbow
+        {
+          OFFSET 0.0 0.0 -0.28
+          CHANNELS 3 Xrotation Yrotation Zrotation
+          JOINT RightWrist
+          {
+            OFFSET 0.0 0.0 -0.24
+            CHANNELS 3 Xrotation Yrotation Zrotation
+            End Site
+            {
+              OFFSET 0.0 0.0 -0.1
+            }
+          }
+        }
+      }
+    }
+  }
+  JOINT LeftHip
+  {
+    OFFSET 0.0 0.09 0.0
+    CHANNELS 3 Xrotation Yrotation Zrotation
+    JOINT LeftKnee
+    {
+      OFFSET 0.0 0.0 -0.4
+      CHANNELS 3 Xrotation Yrotation Zrotation
+      JOINT LeftAnkle
+      {
+        OFFSET 0.0 0.0 -0.4
+        CHANNELS 3 Xrotation Yrotation Zrotation
+        End Site
+        {
+          OFFSET 0.1 0.0 -0.05
+        }
+      }
+    }
+  }
+  JOINT RightHip
+  {
+    OFFSET 0.0 -0.09 0.0
+    CHANNELS 3 Xrotation Yrotation Zrotation
+    JOINT RightKnee
+    {
+      OFFSET 0.0 0.0 -0.4
+      CHANNELS 3 Xrotation Yrotation Zrotation
+      JOINT RightAnkle
+      {
+        OFFSET 0.0 0.0 -0.4
+        CHANNELS 3 Xrotation Yrotation Zrotation
+        End Site
+        {
+          OFFSET 0.1 0.0 -0.05
+        }
+      }
+    }
+  }
+}
+MOTION
+Frames: 3
+Frame Time: 0.02
+0 0 0 0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
+0 0 0 1 0 0  1 0 0  0 0 0  0 0 0  2 1 0  0 -4 0  0 0 0  -2 -1 0  0 -4 0  0 0 0  0 3 0  0 5 0  0 0 0  0 -2 0  0 4 0  0 0 0
+0 0 0 2 0 0  2 0 0  0 0 0  0 0 0  4 2 0  0 -8 0  0 0 0  -4 -2 0  0 -8 0  0 0 0  0 6 0  0 10 0  0 0 0  0 -4 0  0 8 0  0 0 0

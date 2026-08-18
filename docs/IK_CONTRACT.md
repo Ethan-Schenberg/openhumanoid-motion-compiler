@@ -46,11 +46,17 @@ any failed frame has overall status `fail` and cannot be converted to Motion IR.
 
 ## Current coverage boundary
 
-The official G1 and X2 demonstration maps currently track one canonical left
-knee landmark with the three left-hip variables. This proves the complete
-contract, constrained solve, residual reporting, Motion IR, replay, quality,
-and vendor-fixture path on both official models. It is deliberately reported as
-`constrained_partial_body_ik: true` and `constrained_whole_body_ik: false`.
+The small official-model smoke maps track one canonical left-knee landmark with
+three left-hip variables. The larger multi-limb benchmark maps track chest,
+bilateral knees and ankles, and bilateral elbows and wrists: nine Cartesian
+tasks using all 29 G1 variables and all 30 available X2 variables. On the
+included three-frame CC0 motion, both official models solve every frame below
+the declared 5 mm task tolerance.
+
+The landmark report still shows task coverage as 9/16. Therefore both tiers are
+deliberately reported as `constrained_partial_body_ik: true` and
+`constrained_whole_body_ik: false`, even though the output joint vectors cover
+the complete vendor control order.
 
 Whole-body status requires bilateral legs, waist, arms, available head joints,
 orientation tasks, contact constraints, and collision checks. Adding animation
