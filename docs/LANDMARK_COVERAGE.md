@@ -17,5 +17,13 @@ turn the selected gap into a non-zero command result without discarding the
 report.
 
 The original `examples/full_body_motion.bvh` fixture covers 16/16 source
-landmarks. Current vendor multi-limb maps cover 9/16 task landmarks; this is why
-the project does not yet claim whole-body IK.
+landmarks. The current vendor multi-limb maps also consume all 16 landmarks as
+explicit position tasks. Targets declaring `full_body_landmarks_v1` now fail
+if either source or task coverage is incomplete.
+
+Complete landmark-name coverage is not the same as complete whole-body IK.
+The Unitree G1 29DoF model has no articulated head, so its head landmark uses a
+documented torso-frame position proxy. The current contract also lacks frame
+orientation, contact, balance, and collision tasks. Manifests therefore expose
+`full_body_landmark_position_tasks: true` while continuing to set
+`constrained_whole_body_ik: false`.

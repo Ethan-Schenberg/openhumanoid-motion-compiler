@@ -109,6 +109,25 @@ def test_unreachable_task_reports_active_joint_limit() -> None:
     assert all(frame["positions"][0] == pytest.approx(0.52) for frame in result["frames"])
 
 
+def test_solver_rejects_non_finite_linearization(monkeypatch: pytest.MonkeyPatch) -> None:
+    canonical, profile, task_map = inputs()
+    problem = build_ik_problem(canonical, profile, task_map, MODEL)
+    problem["frames"][1]["targets"][0]["position_m"][0] += 0.1
+
+    import mujoco
+
+    original = mujoco.mj_jacBody
+
+    def non_finite_jacobian(model, data, jacp, jacr, body_id):
+        original(model, data, jacp, jacr, body_id)
+        jacp[0, 0] = math.nan
+
+    monkeypatch.setattr(mujoco, "mj_jacBody", non_finite_jacobian)
+
+    with pytest.raises(OhmcError, match="non-finite linearization data"):
+        solve_ik_problem(problem, MODEL)
+
+
 def test_solved_ik_compiles_to_replayable_motion_ir() -> None:
     canonical, profile, task_map = inputs()
     problem = build_ik_problem(canonical, profile, task_map, MODEL)
@@ -157,22 +176,29 @@ def test_retarget_ik_cli_builds_atomic_bundle_and_refuses_overwrite(
 @pytest.mark.parametrize(
     ("name", "variable_count"),
     [
-        ("full_body_unitree_g1_v1.yaml", 29),
-        ("full_body_agibot_x2_v1.yaml", 30),
+        ("full_body_unitree_g1_v2.yaml", 29),
+        ("full_body_agibot_x2_v2.yaml", 30),
     ],
 )
-def test_multilimb_vendor_task_maps_are_schema_valid_and_cover_nine_tasks(
+def test_multilimb_vendor_task_maps_are_schema_valid_and_cover_full_landmarks(
     name: str, variable_count: int
 ) -> None:
     task_map = load_yaml_object(ROOT / "profiles" / "ik" / name)
 
     assert validate_ik_task_map(task_map, TASK_MAP_SCHEMA) == []
     assert len(task_map["variables"]) == variable_count
-    assert len(task_map["tasks"]) == 9
+    assert len(task_map["tasks"]) == 16
     assert {task["source_joint"] for task in task_map["tasks"]} == {
+        "Hips",
+        "Spine",
         "Chest",
+        "Head",
+        "LeftShoulder",
+        "RightShoulder",
+        "LeftHip",
         "LeftKnee",
         "LeftAnkle",
+        "RightHip",
         "RightKnee",
         "RightAnkle",
         "LeftElbow",
@@ -180,3 +206,15 @@ def test_multilimb_vendor_task_maps_are_schema_valid_and_cover_nine_tasks(
         "RightElbow",
         "RightWrist",
     }
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["full_body_unitree_g1_v1.yaml", "full_body_agibot_x2_v1.yaml"],
+)
+def test_legacy_nine_task_maps_remain_versioned_and_valid(name: str) -> None:
+    task_map = load_yaml_object(ROOT / "profiles" / "ik" / name)
+
+    assert validate_ik_task_map(task_map, TASK_MAP_SCHEMA) == []
+    assert task_map["id"].endswith("_v1")
+    assert len(task_map["tasks"]) == 9

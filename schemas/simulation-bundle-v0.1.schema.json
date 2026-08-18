@@ -65,6 +65,7 @@
         "trajectory_derivatives": { "type": "boolean" },
         "mapping_completeness_report": { "type": "boolean" },
         "landmark_coverage_report": { "type": "boolean" },
+        "full_body_landmark_position_tasks": { "type": "boolean" },
         "semantic_joint_mapping": { "type": "boolean" },
         "headless_kinematic_replay": { "type": "boolean" },
         "vendor_interface_fixture": { "type": "boolean" },

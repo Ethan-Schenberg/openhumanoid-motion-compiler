@@ -44,7 +44,8 @@ The first milestone is deliberately offline and simulation-only:
 - Import BVH motion.
 - Load a redistributable humanoid URDF.
 - Map canonical human joints to robot joints through an explicit profile.
-- Solve constrained whole-body inverse kinematics.
+- Solve constrained multi-limb position inverse kinematics with explicit
+  residuals and failure states.
 - Enforce joint, velocity, acceleration, and contact constraints.
 - Export a versioned Motion IR artifact and validation report.
 - Replay the result in MuJoCo.
@@ -159,9 +160,10 @@ against the official Unitree G1 29DoF or AgiBot X2 Ultra MuJoCo model:
   --report build/full-body-matrix-audit.json
 ```
 
-These are headless kinematic `mj_forward` replays. The official targets now run
-a constrained partial-body IK proof on each vendor model, while the manifest
-still explicitly marks whole-body IK, closed-loop dynamics, and hardware
+These are headless kinematic `mj_forward` replays. The multi-limb targets now
+enforce 16/16 canonical landmark position-task coverage on each vendor model.
+This is still a constrained partial-body IK proof: the manifest explicitly
+marks orientation-complete whole-body IK, closed-loop dynamics, and hardware
 transport as unavailable. See [the IK contract](docs/IK_CONTRACT.md) and
 [landmark coverage contract](docs/LANDMARK_COVERAGE.md), plus the
 [target matrix contract](docs/TARGET_MATRIX.md) and

@@ -2,8 +2,14 @@ import hashlib
 import json
 from pathlib import Path
 
+import pytest
+
 from ohmc.cli import main
-from ohmc.simulation import validate_simulation_matrix
+from ohmc.errors import OhmcError
+from ohmc.simulation import (
+    _require_target_landmark_coverage,
+    validate_simulation_matrix,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -82,6 +88,7 @@ def test_one_command_simulation_builds_auditable_bundle(tmp_path: Path) -> None:
     assert manifest["capabilities"]["trajectory_derivatives"] is True
     assert manifest["capabilities"]["mapping_completeness_report"] is True
     assert manifest["capabilities"]["landmark_coverage_report"] is True
+    assert manifest["capabilities"]["full_body_landmark_position_tasks"] is False
     assert manifest["capabilities"]["constrained_partial_body_ik"] is False
     assert manifest["capabilities"]["constrained_whole_body_ik"] is False
     assert manifest["capabilities"]["dynamic_controller_simulation"] is False
@@ -140,6 +147,21 @@ def test_one_command_ik_simulation_packages_solver_evidence(tmp_path: Path) -> N
     assert json.loads((output / "motion.json").read_text())["trajectory"]["joints"] == [
         "waist_roll_joint"
     ]
+
+
+def test_full_body_target_rejects_partial_task_coverage() -> None:
+    report = {
+        "source": {"complete": True, "missing": []},
+        "task_coverage": {"complete": False, "missing": ["Head", "Spine"]},
+    }
+
+    with pytest.raises(
+        OhmcError,
+        match="full_body_landmarks_v1 IK task coverage is incomplete: Head, Spine",
+    ):
+        _require_target_landmark_coverage(report, "full_body_landmarks_v1")
+
+    _require_target_landmark_coverage(report, "simple_motion_v1")
 
 
 def test_all_target_matrix_isolates_missing_vendor_dependencies(tmp_path: Path) -> None:

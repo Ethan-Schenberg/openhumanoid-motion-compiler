@@ -55,7 +55,7 @@ targets:
   unitree-g1-multilimb-benchmark:
     robot_profile: profiles/unitree_g1_29dof.yaml
     semantic_mapping: profiles/mappings/simple_bvh_semantics_v1.yaml
-    ik_task_map: profiles/ik/full_body_unitree_g1_v1.yaml
+    ik_task_map: profiles/ik/full_body_unitree_g1_v2.yaml
     adapter: unitree-g1-lowcmd
     fidelity: official_vendor_model
     input_contract: full_body_landmarks_v1
@@ -93,7 +93,7 @@ targets:
   agibot-x2-ultra-multilimb-benchmark:
     robot_profile: profiles/agibot_x2_ultra_aimdk_v1.yaml
     semantic_mapping: profiles/mappings/simple_bvh_semantics_v1.yaml
-    ik_task_map: profiles/ik/full_body_agibot_x2_v1.yaml
+    ik_task_map: profiles/ik/full_body_agibot_x2_v2.yaml
     adapter: agibot-x2-joint-command-array
     fidelity: official_vendor_model
     input_contract: full_body_landmarks_v1

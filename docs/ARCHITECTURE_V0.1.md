@@ -344,7 +344,9 @@ The implemented v0.1 contract serializes variables, limits, reference-delta
 position tasks, frame targets, and all DLS parameters separately from the
 MuJoCo reference solver. Results retain per-task residuals, active limits, and
 an explicit solved/failed state for every frame. Current vendor demonstrations
-cover a left-hip/left-knee proof only; they do not claim whole-body coverage.
+include a left-hip/left-knee smoke proof and 16-landmark position-task vendor
+benchmarks. They do not claim whole-body coverage because orientation, contact,
+balance, and collision constraints remain outside the implemented contract.
 
 ### Stage 5: smoothing
 

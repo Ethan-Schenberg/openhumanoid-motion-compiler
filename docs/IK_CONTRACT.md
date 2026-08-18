@@ -47,17 +47,31 @@ any failed frame has overall status `fail` and cannot be converted to Motion IR.
 ## Current coverage boundary
 
 The small official-model smoke maps track one canonical left-knee landmark with
-three left-hip variables. The larger multi-limb benchmark maps track chest,
-bilateral knees and ankles, and bilateral elbows and wrists: nine Cartesian
-tasks using all 29 G1 variables and all 30 available X2 variables. On the
-included three-frame CC0 motion, both official models solve every frame below
-the declared 5 mm task tolerance.
+three left-hip variables. The larger multi-limb benchmark consumes all 16
+canonical full-body landmarks as Cartesian position tasks while using all 29
+G1 variables and all 30 available X2 variables. On the included three-frame
+CC0 motion, both official models solve every frame below the declared 5 mm task
+tolerance. A `full_body_landmarks_v1` target now fails before packaging if
+source or task-map landmark coverage is incomplete.
 
-The landmark report still shows task coverage as 9/16. Therefore both tiers are
-deliberately reported as `constrained_partial_body_ik: true` and
-`constrained_whole_body_ik: false`, even though the output joint vectors cover
-the complete vendor control order.
+The G1 29DoF model does not expose an articulated head frame. Its head landmark
+therefore uses an explicitly named `head_position_proxy` task anchored to the
+torso; it must not be interpreted as head-orientation tracking. The manifests
+report `full_body_landmark_position_tasks: true` but remain deliberately marked
+as `constrained_partial_body_ik: true` and `constrained_whole_body_ik: false`.
 
-Whole-body status requires bilateral legs, waist, arms, available head joints,
-orientation tasks, contact constraints, and collision checks. Adding animation
-or more joints without those acceptance conditions does not change that status.
+The 16-landmark maps are versioned as `full_body_unitree_g1_v2` and
+`full_body_agibot_x2_v2`. The earlier nine-task `v1` maps remain in the
+repository so historical evidence manifests retain a resolvable configuration
+identity; active multi-limb simulation targets select `v2`.
+
+Whole-body status still requires frame-orientation tasks, contact constraints,
+balance metrics, and collision checks in addition to the implemented bilateral
+legs, waist, arms, available head variables, and 16/16 landmark-position
+coverage. Adding position-task names without those acceptance conditions does
+not change that status.
+
+The reference solver checks the finiteness of the stacked Jacobian, error
+vector, normal equations, and solved update. A non-finite value or singular
+normal equation raises an explicit compilation error rather than leaking a
+numerically suspect trajectory into Motion IR.

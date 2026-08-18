@@ -414,17 +414,44 @@ def solve_ik_problem(problem: dict[str, Any], model_path: Path) -> dict[str, Any
                 break
             jacobian = np.vstack(jacobian_blocks)
             error = np.concatenate(error_blocks)
+            if not np.all(np.isfinite(jacobian)) or not np.all(np.isfinite(error)):
+                raise OhmcError(
+                    "IK produced non-finite linearization data at "
+                    f"frame {len(frame_results)}, iteration {iteration}"
+                )
             damping = float(solver["damping"])
             neutral_weight = float(solver["neutral_weight"])
             temporal_weight = float(solver["temporal_weight"])
-            matrix = jacobian.T @ jacobian
+            # Some MuJoCo builds leave floating-point status flags set after
+            # Jacobian evaluation. NumPy may surface those stale flags as a
+            # matmul warning even when every operand and result is finite.
+            # Suppress only the low-level warning here and enforce finiteness
+            # explicitly before and after constructing the normal equations.
+            with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
+                matrix = jacobian.T @ jacobian
+                gradient = jacobian.T @ error
+            if not np.all(np.isfinite(matrix)) or not np.all(np.isfinite(gradient)):
+                raise OhmcError(
+                    "IK produced non-finite normal equations at "
+                    f"frame {len(frame_results)}, iteration {iteration}"
+                )
             matrix += (
                 damping * damping + neutral_weight + temporal_weight
             ) * np.eye(len(q))
-            gradient = jacobian.T @ error
             gradient += neutral_weight * (neutral - q)
             gradient += temporal_weight * (previous - q)
-            delta = np.linalg.solve(matrix, gradient)
+            try:
+                delta = np.linalg.solve(matrix, gradient)
+            except np.linalg.LinAlgError as exc:
+                raise OhmcError(
+                    "IK normal equations are singular at "
+                    f"frame {len(frame_results)}, iteration {iteration}"
+                ) from exc
+            if not np.all(np.isfinite(delta)):
+                raise OhmcError(
+                    "IK produced a non-finite step at "
+                    f"frame {len(frame_results)}, iteration {iteration}"
+                )
             max_step = float(solver["max_step_rad"])
             delta = np.clip(delta, -max_step, max_step)
             candidate = np.clip(q + delta, lower, upper)

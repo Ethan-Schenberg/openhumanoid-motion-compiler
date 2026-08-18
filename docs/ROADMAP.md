@@ -81,13 +81,15 @@ validation gaps:
 
 - Solver-neutral task/problem/result schemas and a deterministic bounded DLS
   MuJoCo reference solver are implemented.
-- G1 and X2 official-model bundles execute a three-variable left-hip position
-  task with explicit per-frame residuals and failure states. This is labelled
-  partial-body IK, not whole-body IK.
-- A larger 9-task multi-limb benchmark now drives all 29 G1 and all 30 available
-  X2 command variables. Both official models solve all three CC0 benchmark
-  frames below 5 mm, while the coverage report still exposes the 9/16 landmark
-  gap.
+- G1 and X2 official-model smoke bundles execute a three-variable left-hip
+  position task with explicit per-frame residuals and failure states.
+- The larger multi-limb benchmark now consumes all 16 canonical landmarks as
+  position tasks and drives all 29 G1 and all 30 available X2 command variables.
+  Both official models solve all three CC0 benchmark frames below 5 mm, and a
+  strict target gate rejects incomplete source or task coverage.
+- Full landmark-position coverage remains labelled partial-body IK: the G1
+  head task is a torso proxy, and orientation, contact, balance, and collision
+  constraints are not implemented.
 - Solve all configured legs, waist, arms, and available head joints.
 - Enforce profile position limits and report residuals per frame.
 - Add foot-contact preservation, self-collision checks, smoothing, and explicit
@@ -143,9 +145,9 @@ The next implementation order is:
 1. Morphology scaling and deterministic timeline resampling. Implemented.
 2. Solver-neutral IK problem contract and a small deterministic reference
    solver. Implemented.
-3. Expand canonical landmark-to-robot task mapping from the implemented
-   left-knee proof to full-body IK.
-4. Contact-aware dynamic replay metrics.
+3. Expand canonical landmark-to-robot position mapping to 16/16 landmarks.
+   Implemented with a strict source/task coverage gate.
+4. Add frame-orientation tasks and contact-aware dynamic replay metrics.
 5. Side-by-side rendered regression evidence.
 
 This order improves the mathematical core before adding presentation layers,

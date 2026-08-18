@@ -104,6 +104,29 @@ def validate_simulation_matrix(
     return issues
 
 
+def _require_target_landmark_coverage(
+    report: dict[str, Any], input_contract: str
+) -> None:
+    """Enforce the landmark guarantees promised by a simulation target."""
+    if input_contract != "full_body_landmarks_v1":
+        return
+    if not report["source"]["complete"]:
+        missing = ", ".join(report["source"]["missing"])
+        raise OhmcError(
+            "full_body_landmarks_v1 source coverage is incomplete: " + missing
+        )
+    task_coverage = report["task_coverage"]
+    if task_coverage is None:
+        raise OhmcError(
+            "full_body_landmarks_v1 requires an IK task map with full coverage"
+        )
+    if not task_coverage["complete"]:
+        missing = ", ".join(task_coverage["missing"])
+        raise OhmcError(
+            "full_body_landmarks_v1 IK task coverage is incomplete: " + missing
+        )
+
+
 def load_simulation_target(
     registry_path: Path, schema_path: Path, target_name: str
 ) -> dict[str, Any]:
@@ -401,6 +424,9 @@ def build_simulation_bundle(
         raise OhmcError(
             "generated invalid landmark report: " + "; ".join(landmark_issues)
         )
+    _require_target_landmark_coverage(
+        landmark_report, target["input_contract"]
+    )
     mapped_issues = validate_motion_ir(mapped_motion, motion_schema)
     if mapped_issues:
         raise OhmcError("generated invalid mapped Motion IR: " + "; ".join(mapped_issues))
@@ -489,6 +515,10 @@ def build_simulation_bundle(
                 "trajectory_derivatives": True,
                 "mapping_completeness_report": True,
                 "landmark_coverage_report": True,
+                "full_body_landmark_position_tasks": bool(
+                    landmark_report["task_coverage"] is not None
+                    and landmark_report["task_coverage"]["complete"]
+                ),
                 "semantic_joint_mapping": True,
                 "headless_kinematic_replay": True,
                 "vendor_interface_fixture": True,
