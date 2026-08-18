@@ -97,6 +97,9 @@ validation gaps:
 
 ### v0.5 — Dynamic simulation and regression metrics
 
+- Trajectory-level peak velocity, acceleration, jerk, and minimum position
+  margin are implemented with responsible-joint attribution and aggregate
+  consistency checks. Missing vendor limits remain warnings.
 - Add position-controller and actuator-aware MuJoCo replay.
 - Measure foot slip, base drift, joint-limit margin, peak velocity,
   acceleration, torque proxy, and contact discontinuity.

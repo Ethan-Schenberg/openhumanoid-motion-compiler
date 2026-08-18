@@ -205,6 +205,7 @@ def trajectory_quality_report(
     joint_index = {joint: index for index, joint in enumerate(joints)}
     missing_velocity_limits: list[str] = []
     missing_acceleration_limits: list[str] = []
+    times = [float(sample["time"]) for sample in samples]
     for joint in mapped_joints:
         vector_index = joint_index[joint]
         limit = profile["joint_limits"][joint]
@@ -270,6 +271,24 @@ def trajectory_quality_report(
 
         acceleration_limit = limit.get("acceleration")
         maximum_acceleration = max(abs(value) for value in accelerations)
+        jerks = []
+        for sample_index, timestamp in enumerate(times):
+            indices = _window(len(samples), sample_index)
+            nodes = [times[index] for index in indices]
+            if len(nodes) == 1:
+                weights = [0.0]
+            elif len(nodes) == 2:
+                interval = nodes[1] - nodes[0]
+                weights = [-1.0 / interval, 1.0 / interval]
+            else:
+                weights = _first_derivative_weights(nodes, timestamp)
+            jerks.append(
+                sum(
+                    weights[weight_index] * accelerations[position_index]
+                    for weight_index, position_index in enumerate(indices)
+                )
+            )
+        maximum_jerk = max(abs(value) for value in jerks)
         if acceleration_limit is None:
             acceleration_status = "not_configured"
             missing_acceleration_limits.append(joint)
@@ -302,6 +321,7 @@ def trajectory_quality_report(
                 "velocity_limit": velocity_limit,
                 "velocity_status": velocity_status,
                 "maximum_absolute_acceleration": maximum_acceleration,
+                "maximum_absolute_jerk": maximum_jerk,
                 "acceleration_limit": acceleration_limit,
                 "acceleration_status": acceleration_status,
             }
@@ -319,6 +339,16 @@ def trajectory_quality_report(
         )
     status = "fail" if violations else ("warning" if warnings else "pass")
     duration = float(samples[-1]["time"]) - float(samples[0]["time"])
+    peak_velocity = max(
+        joint_metrics, key=lambda item: item["maximum_absolute_velocity"]
+    )
+    peak_acceleration = max(
+        joint_metrics, key=lambda item: item["maximum_absolute_acceleration"]
+    )
+    peak_jerk = max(joint_metrics, key=lambda item: item["maximum_absolute_jerk"])
+    minimum_margin = min(
+        joint_metrics, key=lambda item: item["minimum_position_margin"]
+    )
     return {
         "schema": "ohmc.trajectory_quality/v0.1",
         "robot_profile": profile["id"],
@@ -344,6 +374,24 @@ def trajectory_quality_report(
             "acceleration_configured_joint_count": acceleration_configured,
             "mapped_joint_count": len(mapped_joints),
         },
+        "trajectory_metrics": {
+            "peak_absolute_velocity": {
+                "joint": peak_velocity["joint"],
+                "value": peak_velocity["maximum_absolute_velocity"],
+            },
+            "peak_absolute_acceleration": {
+                "joint": peak_acceleration["joint"],
+                "value": peak_acceleration["maximum_absolute_acceleration"],
+            },
+            "peak_absolute_jerk": {
+                "joint": peak_jerk["joint"],
+                "value": peak_jerk["maximum_absolute_jerk"],
+            },
+            "minimum_position_margin": {
+                "joint": minimum_margin["joint"],
+                "value": minimum_margin["minimum_position_margin"],
+            },
+        },
         "joint_metrics": joint_metrics,
         "violations": violations,
         "warnings": warnings,
@@ -362,4 +410,36 @@ def validate_quality_report(
     ):
         location = ".".join(str(part) for part in error.absolute_path) or "$"
         issues.append(f"{location}: {error.message}")
+    if issues:
+        return issues
+    joint_metrics = document["joint_metrics"]
+    extrema = {
+        "peak_absolute_velocity": max(
+            joint_metrics, key=lambda item: item["maximum_absolute_velocity"]
+        ),
+        "peak_absolute_acceleration": max(
+            joint_metrics, key=lambda item: item["maximum_absolute_acceleration"]
+        ),
+        "peak_absolute_jerk": max(
+            joint_metrics, key=lambda item: item["maximum_absolute_jerk"]
+        ),
+        "minimum_position_margin": min(
+            joint_metrics, key=lambda item: item["minimum_position_margin"]
+        ),
+    }
+    fields = {
+        "peak_absolute_velocity": "maximum_absolute_velocity",
+        "peak_absolute_acceleration": "maximum_absolute_acceleration",
+        "peak_absolute_jerk": "maximum_absolute_jerk",
+        "minimum_position_margin": "minimum_position_margin",
+    }
+    for name, joint_metric in extrema.items():
+        aggregate = document["trajectory_metrics"][name]
+        if aggregate["joint"] != joint_metric["joint"] or not math.isclose(
+            float(aggregate["value"]),
+            float(joint_metric[fields[name]]),
+            rel_tol=0.0,
+            abs_tol=1e-12,
+        ):
+            issues.append(f"trajectory_metrics.{name} does not match joint_metrics")
     return issues

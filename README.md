@@ -364,7 +364,8 @@ Implemented foundation:
 - Canonical BVH skeleton evaluation with explicit source axes/units, ordered
   local rotations, metre offsets, quaternions, and deterministic world poses.
 - Non-uniform timestamp velocity/acceleration derivation, profile limit checks,
-  and explicit per-robot mapping-completeness reports with strict CLI gates.
+  peak velocity/acceleration/jerk and position-margin attribution, and explicit
+  per-robot mapping-completeness reports with strict CLI gates.
 - Uniform morphology scaling, exact-duration resampling, shortest-arc SLERP,
   FK recomputation, and pass-level input/output hash chaining.
 - Solver-neutral IK task/problem/result schemas plus a bounded deterministic DLS

@@ -31,6 +31,16 @@ def quadratic_motion() -> dict:
     return document
 
 
+def cubic_motion() -> dict:
+    document = json.loads((ROOT / "examples" / "minimal_motion.json").read_text())
+    document["trajectory"]["joints"] = ["cubic"]
+    document["trajectory"]["samples"] = [
+        {"time": float(time), "position_targets": [float(time**3)]}
+        for time in range(4)
+    ]
+    return document
+
+
 def complete_profile() -> dict:
     return {
         "id": "quality_fixture",
@@ -99,6 +109,25 @@ def test_complete_trajectory_quality_passes_configured_limits() -> None:
     assert report["joint_metrics"][0]["maximum_absolute_acceleration"] == pytest.approx(
         2.0
     )
+    assert report["joint_metrics"][0]["maximum_absolute_jerk"] == pytest.approx(
+        0.0, abs=1e-12
+    )
+    metrics = report["trajectory_metrics"]
+    assert metrics["peak_absolute_velocity"] == {"joint": "quadratic", "value": 6.0}
+    assert metrics["peak_absolute_acceleration"] == {
+        "joint": "quadratic",
+        "value": 2.0,
+    }
+    assert metrics["peak_absolute_jerk"]["joint"] == "quadratic"
+    assert metrics["peak_absolute_jerk"]["value"] == pytest.approx(0.0, abs=1e-12)
+    assert metrics["minimum_position_margin"] == {
+        "joint": "quadratic",
+        "value": 1.0,
+    }
+    report["trajectory_metrics"]["peak_absolute_velocity"]["value"] = 999.0
+    assert validate_quality_report(report, QUALITY_SCHEMA) == [
+        "trajectory_metrics.peak_absolute_velocity does not match joint_metrics"
+    ]
 
 
 def test_quality_report_exposes_incomplete_vendor_mapping_and_missing_limits() -> None:
@@ -115,6 +144,31 @@ def test_quality_report_exposes_incomplete_vendor_mapping_and_missing_limits() -
         "velocity_configured_joint_count": 0,
         "acceleration_configured_joint_count": 0,
         "mapped_joint_count": 2,
+    }
+
+
+def test_quality_report_derives_nonzero_jerk_from_acceleration_series() -> None:
+    profile = {
+        "id": "cubic_fixture",
+        "control": {"joint_order": ["cubic"]},
+        "joint_limits": {
+            "cubic": {
+                "lower": -1.0,
+                "upper": 30.0,
+                "velocity": 30.0,
+                "acceleration": 20.0,
+            }
+        },
+    }
+
+    report = trajectory_quality_report(
+        derive_motion_kinematics(cubic_motion()), profile
+    )
+
+    assert report["joint_metrics"][0]["maximum_absolute_jerk"] == pytest.approx(3.0)
+    assert report["trajectory_metrics"]["peak_absolute_jerk"] == {
+        "joint": "cubic",
+        "value": pytest.approx(3.0),
     }
 
 

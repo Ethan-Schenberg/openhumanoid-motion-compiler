@@ -24,6 +24,11 @@ differences that support non-uniform timestamps:
 The method exactly differentiates quadratic position data at irregular sample
 times. Existing derivative vectors are not overwritten implicitly.
 
+The quality pass differentiates the acceleration series with the same
+non-uniform first-derivative stencils to report peak absolute jerk. Jerk is a
+measured trajectory statistic in v0.1; it has no invented limit when a vendor
+profile does not provide one.
+
 ## Limit validation
 
 For every mapped joint, the report records:
@@ -32,7 +37,13 @@ For every mapped joint, the report records:
 - minimum distance to either position limit;
 - maximum absolute velocity and configured velocity limit;
 - maximum absolute acceleration and configured acceleration limit;
+- maximum absolute jerk;
 - `pass`, `fail`, or `not_configured` for each dynamic limit.
+
+The report also provides auditable global extrema: peak absolute velocity,
+acceleration, and jerk, plus the minimum position-limit margin. Each aggregate
+names the responsible joint, and semantic validation recomputes it from the
+per-joint table so inconsistent summaries are rejected.
 
 Any measured violation makes the report `fail` and prevents the one-command
 simulation bundle from being published. A missing dynamic limit produces

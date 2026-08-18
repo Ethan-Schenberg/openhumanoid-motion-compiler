@@ -11,6 +11,7 @@
     "summary",
     "mapping",
     "dynamic_limit_coverage",
+    "trajectory_metrics",
     "joint_metrics",
     "violations",
     "warnings",
@@ -74,6 +75,22 @@
         "mapped_joint_count": { "type": "integer", "minimum": 0 }
       }
     },
+    "trajectory_metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "peak_absolute_velocity",
+        "peak_absolute_acceleration",
+        "peak_absolute_jerk",
+        "minimum_position_margin"
+      ],
+      "properties": {
+        "peak_absolute_velocity": { "$ref": "#/$defs/nonnegativeMetric" },
+        "peak_absolute_acceleration": { "$ref": "#/$defs/nonnegativeMetric" },
+        "peak_absolute_jerk": { "$ref": "#/$defs/nonnegativeMetric" },
+        "minimum_position_margin": { "$ref": "#/$defs/signedMetric" }
+      }
+    },
     "joint_metrics": {
       "type": "array",
       "minItems": 1,
@@ -115,6 +132,7 @@
         "velocity_limit",
         "velocity_status",
         "maximum_absolute_acceleration",
+        "maximum_absolute_jerk",
         "acceleration_limit",
         "acceleration_status"
       ],
@@ -127,8 +145,27 @@
         "velocity_limit": { "$ref": "#/$defs/optionalPositiveNumber" },
         "velocity_status": { "$ref": "#/$defs/limitStatus" },
         "maximum_absolute_acceleration": { "type": "number", "minimum": 0 },
+        "maximum_absolute_jerk": { "type": "number", "minimum": 0 },
         "acceleration_limit": { "$ref": "#/$defs/optionalPositiveNumber" },
         "acceleration_status": { "$ref": "#/$defs/limitStatus" }
+      }
+    },
+    "nonnegativeMetric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["joint", "value"],
+      "properties": {
+        "joint": { "type": "string", "minLength": 1 },
+        "value": { "type": "number", "minimum": 0 }
+      }
+    },
+    "signedMetric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["joint", "value"],
+      "properties": {
+        "joint": { "type": "string", "minLength": 1 },
+        "value": { "type": "number" }
       }
     },
     "violation": {
