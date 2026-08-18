@@ -33,6 +33,63 @@ class ComponentStatus:
     detail: str
 
 
+def _license_warning(component: Component, status: ComponentStatus) -> list[str]:
+    warnings: list[str] = []
+    license_name = str(component.config.get("license", "")).lower()
+    if license_name == "unresolved":
+        warnings.append("license not yet resolved for redistribution")
+    if not bool(component.config.get("redistribute", True)):
+        warnings.append("redistribution is disabled by lock policy")
+    if component.acquisition == "official_download" and status.state == "verified":
+        artifact_name = component.config.get("artifact_name", "")
+        if not artifact_name:
+            warnings.append("official download has no configured artifact name")
+    return warnings
+
+
+def doctor_report(
+    lock: dict[str, Any], cache_dir: Path, vendor_filter: str | None = None
+) -> dict[str, Any]:
+    statuses = status_all(lock, cache_dir, vendor_filter)
+    vendors: dict[str, Any] = {}
+    critical = 0
+    warning = 0
+
+    for status in statuses:
+        warnings = []
+        errors = []
+        if status.state not in {"verified", "system"}:
+            critical += 1
+            errors.append(f"component {status.state}: {status.detail}")
+        warnings.extend(_license_warning(status.component, status))
+        warning += len(warnings)
+        component_record: dict[str, Any] = {
+            "component": status.component.name,
+            "state": status.state,
+            "acquisition": status.component.acquisition,
+            "vendor": status.component.vendor,
+            "license": status.component.config.get("license", "unknown"),
+            "redistribute": bool(status.component.config.get("redistribute", False)),
+            "source": status.component.config.get("source"),
+            "detail": status.detail,
+            "warnings": warnings,
+            "errors": errors,
+        }
+        vendor_bucket = vendors.setdefault(
+            status.component.vendor, {"components": [], "critical": 0, "warning": 0}
+        )
+        vendor_bucket["components"].append(component_record)
+        vendor_bucket["critical"] += len(errors)
+        vendor_bucket["warning"] += len(warnings)
+
+    return {
+        "vendors": vendors,
+        "critical": critical,
+        "warning": warning,
+        "healthy": critical == 0,
+    }
+
+
 def normalize_vendor_name(name: str) -> str:
     return name.strip().lower().replace("-", "_")
 
@@ -249,4 +306,3 @@ def sync_git_vendor(
             )
         synced.append(destination)
     return synced
-

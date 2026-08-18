@@ -72,7 +72,7 @@ ohmc vendor verify agibot-x2
 ohmc vendor doctor agibot-x2
 ```
 
-Import copies or links the artifact into an ignored local cache, verifies its SHA-256, inspects its ROS packages, and reports compatibility. It does not rely on an undocumented file already existing on a robot.
+Import copies the artifact into an ignored local cache, verifies its SHA-256, and reports checksum health. Use `vendor doctor` to view dependency status, licensing redistributability notes, and actionable warnings.
 
 ## Updating a dependency
 

@@ -6,11 +6,12 @@ import yaml
 from ohmc.vendor import (
     import_official_artifact,
     load_vendor_lock,
+    doctor_report,
     status_all,
 )
 
 
-def write_lock(path: Path, artifact_name: str, checksum: str) -> None:
+def write_lock(path: Path, artifact_name: str, checksum: str, *, license_name: str = "MIT", redistribute: bool = False) -> None:
     data = {
         "schema": "ohmc.vendor_lock/v0.1",
         "vendors": {
@@ -21,7 +22,8 @@ def write_lock(path: Path, artifact_name: str, checksum: str) -> None:
                         "artifact_name": artifact_name,
                         "sha256": checksum,
                         "acquisition": "official_download",
-                        "license": "MIT",
+                        "license": license_name,
+                        "redistribute": redistribute,
                     }
                 }
             }
@@ -63,3 +65,28 @@ def test_import_rejects_checksum_mismatch(tmp_path: Path) -> None:
     else:
         raise AssertionError("checksum mismatch was accepted")
 
+
+def test_doctor_report_marks_resolved_and_unresolved_states(tmp_path: Path) -> None:
+    artifact = tmp_path / "example-sdk.zip"
+    artifact.write_bytes(b"official SDK fixture")
+    checksum = hashlib.sha256(artifact.read_bytes()).hexdigest()
+    lock_path = tmp_path / "vendor-lock.yaml"
+    write_lock(
+        lock_path,
+        artifact.name,
+        checksum,
+        license_name="unresolved",
+        redistribute=False,
+    )
+    lock = load_vendor_lock(lock_path)
+    cache_dir = tmp_path / "cache"
+    import_official_artifact(lock, cache_dir, "example_robot", artifact)
+
+    report = doctor_report(lock, cache_dir, "example_robot")
+    assert report["healthy"] is True
+    assert report["critical"] == 0
+    assert report["warning"] == 2  # unresolved license + redistribution disabled
+    vendor_payload = report["vendors"]["example_robot"]
+    assert vendor_payload["critical"] == 0
+    assert vendor_payload["warning"] == 2
+    assert vendor_payload["components"][0]["component"] == "sdk"

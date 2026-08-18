@@ -167,6 +167,7 @@ Inspect and verify vendor SDK dependencies:
 ```bash
 .venv/bin/ohmc vendor status
 .venv/bin/ohmc vendor verify
+.venv/bin/ohmc vendor doctor
 ```
 
 Synchronize the pinned Unitree SDK, ROS 2, and MuJoCo repositories:
@@ -181,6 +182,7 @@ Import official AgiBot X2 downloads into the verified local cache:
 .venv/bin/ohmc vendor import agibot-x2 /path/to/aimdk-aarch64-artifacts.zip
 .venv/bin/ohmc vendor import agibot-x2 /path/to/X2_URDF-v1.3.0.zip
 .venv/bin/ohmc vendor verify agibot-x2
+.venv/bin/ohmc vendor doctor agibot-x2 --json
 ```
 
 The dependency cache defaults to `~/.cache/ohmc`. Set `OHMC_CACHE_DIR` or pass `--cache-dir` to use another location. Cached SDKs are not committed to the OHMC repository.

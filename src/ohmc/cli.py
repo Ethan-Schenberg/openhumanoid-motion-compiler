@@ -23,6 +23,7 @@ from .replay import replay_mujoco
 from .vendor import (
     default_cache_dir,
     import_official_artifact,
+    doctor_report,
     load_vendor_lock,
     status_all,
     sync_git_vendor,
@@ -163,7 +164,34 @@ def build_parser() -> argparse.ArgumentParser:
 
     sync = vendor_commands.add_parser("sync", help="sync pinned Git dependencies")
     sync.add_argument("vendor")
+
+    doctor = vendor_commands.add_parser(
+        "doctor", help="print detailed vendor health report"
+    )
+    doctor.add_argument("vendor", nargs="?")
+    doctor.add_argument(
+        "--json", action="store_true", help="emit machine-readable doctor report"
+    )
     return parser
+
+
+def _print_doctor_report(report: dict) -> None:
+    if not report["vendors"]:
+        print("No matching vendor components.")
+        return
+    for vendor_name, vendor_data in report["vendors"].items():
+        print(f"vendor: {vendor_name}")
+        print(f"  critical: {vendor_data['critical']}")
+        print(f"  warning: {vendor_data['warning']}")
+        for component in vendor_data["components"]:
+            print(
+                f"  - {component['component']:<20} {component['state']:<16} "
+                f"{component['acquisition']:<20} {component['detail']}"
+            )
+            for warning in component["warnings"]:
+                print(f"    warning: {warning}")
+            for error in component["errors"]:
+                print(f"    error: {error}")
 
 
 def _print_statuses(statuses: list, strict: bool) -> int:
@@ -341,6 +369,13 @@ def run(args: argparse.Namespace) -> int:
         for destination in sync_git_vendor(lock, cache_dir, args.vendor):
             print(f"synced and verified: {destination}")
         return 0
+    if args.vendor_command == "doctor":
+        report = doctor_report(lock, cache_dir, args.vendor)
+        if args.json:
+            print(json.dumps(report, indent=2))
+        else:
+            _print_doctor_report(report)
+        return 1 if not report["healthy"] else 0
     raise OhmcError("unhandled command")
 
 
