@@ -190,8 +190,8 @@ Initial commands:
 ```text
 ohmc inspect-source INPUT.bvh
 ohmc inspect-robot PROFILE.yaml
-ohmc compile INPUT.bvh --robot PROFILE.yaml --output BUILD_DIR
-ohmc validate BUILD_DIR/motion.json
+ohmc simulate INPUT.bvh --target TARGET --source-license SPDX --output BUILD_DIR
+ohmc validate-ir BUILD_DIR/motion.json
 ohmc replay BUILD_DIR/motion.json --backend mujoco
 ohmc report BUILD_DIR/report.json
 ohmc vendor status
@@ -239,16 +239,19 @@ A build directory is self-describing:
 ```text
 build/example/
   manifest.json
+  motion.source.json
   motion.json
-  report.json
+  replay-report.json
+  interface-fixture.json
   configs/
-    compile.resolved.yaml
-    robot.resolved.yaml
-  provenance/
-    inputs.json
-  logs/
-    passes.jsonl
+    robot-profile.yaml
+    semantic-mapping.yaml
 ```
+
+The v0.2 prototype currently emits `manifest.json`, source/mapped Motion IR,
+replay report, interface fixture, and copied profile/mapping configuration.
+Dedicated provenance and pass-log files remain planned; provenance hashes and
+pass records currently live in the manifest and Motion IR respectively.
 
 Large numeric arrays may move to a binary container after profiling. The manifest and schema remain readable and versioned.
 

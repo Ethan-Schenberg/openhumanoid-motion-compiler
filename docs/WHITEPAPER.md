@@ -309,6 +309,8 @@ Motion IR changes follow semantic versioning. Breaking schema changes require a 
 - Execute semantic mapping and constrained IK.
 - Emit Motion IR plus validation report.
 - Replay the artifact in MuJoCo.
+- Compose import, mapping, replay, provenance, and non-executable adapter
+  fixtures through a one-command simulation evidence bundle.
 
 ### M2: Benchmark and visualization
 

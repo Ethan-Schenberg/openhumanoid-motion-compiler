@@ -1,0 +1,14 @@
+<mujoco model="ohmc_semantic_contract_fixture">
+  <compiler angle="radian"/>
+  <option timestep="0.002" gravity="0 0 0"/>
+  <worldbody>
+    <body name="waist_body" pos="0 0 1">
+      <joint name="waist_yaw_joint" type="hinge" axis="0 0 1" range="-2.6 2.6"/>
+      <geom type="capsule" fromto="0 0 0 0 0 -0.25" size="0.04" mass="0.1"/>
+      <body name="left_knee_body" pos="0 0 -0.25">
+        <joint name="left_knee_joint" type="hinge" axis="0 1 0" range="-0.08 2.4"/>
+        <geom type="capsule" fromto="0 0 0 0 0 -0.25" size="0.035" mass="0.1"/>
+      </body>
+    </body>
+  </worldbody>
+</mujoco>

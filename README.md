@@ -84,8 +84,48 @@ Requires Python 3.10 or newer:
 
 ```bash
 python3 -m venv .venv
-.venv/bin/python -m pip install -e '.[dev]'
+.venv/bin/python -m pip install -e '.[dev,mujoco]'
 ```
+
+Run the complete offline pipeline with one command. This smoke target uses a
+small synthetic MuJoCo model while still exercising the Unitree G1 profile and
+non-executable adapter contract:
+
+```bash
+.venv/bin/ohmc simulate examples/simple_motion.bvh \
+  --target unitree-g1-contract-fixture \
+  --source-license CC0-1.0 \
+  --output build/one-click-smoke
+```
+
+The command emits an atomic, hash-addressed evidence bundle containing source
+and mapped Motion IR, copied resolved configuration, a replay report, a vendor
+interface fixture, and `manifest.json`. It refuses to overwrite an existing
+build directory.
+
+After resolving the pinned vendor dependencies, the same command replays
+against the official Unitree G1 29DoF or AgiBot X2 Ultra MuJoCo model:
+
+```bash
+.venv/bin/ohmc vendor sync unitree
+.venv/bin/ohmc simulate examples/simple_motion.bvh \
+  --target unitree-g1 \
+  --source-license CC0-1.0 \
+  --output build/unitree-g1 \
+  --cache-dir .ohmc-cache
+
+.venv/bin/ohmc vendor import agibot-x2 /path/to/X2_URDF-v1.3.0.zip
+.venv/bin/ohmc simulate examples/simple_motion.bvh \
+  --target agibot-x2-ultra \
+  --source-license CC0-1.0 \
+  --output build/agibot-x2-ultra \
+  --cache-dir .ohmc-cache
+```
+
+These are headless kinematic `mj_forward` replays. The manifest explicitly
+marks constrained whole-body IK, closed-loop dynamics, and hardware transport
+as unavailable. See [the project roadmap](docs/ROADMAP.md) for the higher
+simulation target and acceptance gates.
 
 Validate the reference Motion IR artifact:
 
@@ -237,7 +277,10 @@ Implemented foundation:
   explicit joint ordering, limits, grouping, and exclusions.
 - Non-executable Unitree G1 `LowCmd` and AgiBot X2 `JointCommandArray` interface
   fixtures with schema validation and CI conformance tests.
+- One-command, atomic simulation evidence bundles for synthetic contract smoke
+  tests and pinned official Unitree G1/AgiBot X2 Ultra models.
 
 Canonical root transforms, full-body semantic mapping, constrained IK compiler
-passes, and dynamic simulator playback are the next implementation milestones.
+passes, dynamic simulator playback, and rendered comparison video are the next
+implementation milestones.
 Real-robot execution remains outside v0.1.

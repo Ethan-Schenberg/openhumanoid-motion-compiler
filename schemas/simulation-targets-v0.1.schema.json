@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openhumanoid.dev/schemas/simulation-targets-v0.1.schema.json",
+  "title": "OHMC simulation target registry v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "targets"],
+  "properties": {
+    "schema": { "const": "ohmc.simulation_targets/v0.1" },
+    "targets": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/target" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "robot_profile",
+        "semantic_mapping",
+        "adapter",
+        "fidelity",
+        "simulator"
+      ],
+      "properties": {
+        "robot_profile": { "type": "string", "minLength": 1 },
+        "semantic_mapping": { "type": "string", "minLength": 1 },
+        "adapter": {
+          "enum": ["unitree-g1-lowcmd", "agibot-x2-joint-command-array"]
+        },
+        "fidelity": {
+          "enum": ["synthetic_contract_fixture", "official_vendor_model"]
+        },
+        "simulator": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["backend", "model"],
+          "properties": {
+            "backend": { "const": "mujoco" },
+            "model": { "$ref": "#/$defs/model" }
+          }
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "path", "expected_sha256"],
+      "properties": {
+        "kind": {
+          "enum": ["workspace_file", "git_component", "zip_component"]
+        },
+        "path": { "type": "string", "minLength": 1 },
+        "expected_sha256": { "$ref": "#/$defs/sha256" },
+        "vendor": { "type": "string", "minLength": 1 },
+        "component": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": { "enum": ["git_component", "zip_component"] }
+            }
+          },
+          "then": { "required": ["vendor", "component"] }
+        }
+      ]
+    }
+  }
+}

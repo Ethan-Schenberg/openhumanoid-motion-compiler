@@ -20,6 +20,7 @@ from .profiles import (
     validate_semantic_map,
 )
 from .replay import replay_mujoco
+from .simulation import build_simulation_bundle
 from .vendor import (
     default_cache_dir,
     import_official_artifact,
@@ -139,6 +140,80 @@ def build_parser() -> argparse.ArgumentParser:
         default=default_project_root()
         / "schemas"
         / "vendor-interface-fixture-v0.1.schema.json",
+    )
+
+    simulate = subcommands.add_parser(
+        "simulate",
+        help="compile, map, replay, and package an offline simulation in one command",
+    )
+    simulate.add_argument("document", type=Path, help="licensed BVH input")
+    simulate.add_argument(
+        "--target",
+        required=True,
+        help=(
+            "target registry key, such as unitree-g1-contract-fixture, "
+            "unitree-g1, or agibot-x2-ultra"
+        ),
+    )
+    simulate.add_argument(
+        "--source-license",
+        required=True,
+        help="SPDX identifier or other explicit license assertion",
+    )
+    simulate.add_argument(
+        "--output", type=Path, required=True, help="new evidence-bundle directory"
+    )
+    simulate.add_argument(
+        "--targets",
+        type=Path,
+        default=default_project_root() / "profiles" / "simulation_targets_v0.1.yaml",
+    )
+    simulate.add_argument(
+        "--target-schema",
+        type=Path,
+        default=default_project_root()
+        / "schemas"
+        / "simulation-targets-v0.1.schema.json",
+    )
+    simulate.add_argument(
+        "--lock",
+        type=Path,
+        default=default_project_root() / "vendor" / "vendor-lock.yaml",
+    )
+    simulate.add_argument(
+        "--cache-dir",
+        type=Path,
+        default=default_cache_dir(),
+        help="verified vendor dependency cache",
+    )
+    simulate.add_argument(
+        "--schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "motion-ir-v0.1.schema.json",
+    )
+    simulate.add_argument(
+        "--profile-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "robot-profile-v0.1.schema.json",
+    )
+    simulate.add_argument(
+        "--mapping-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "semantic-map-v0.1.schema.json",
+    )
+    simulate.add_argument(
+        "--fixture-schema",
+        type=Path,
+        default=default_project_root()
+        / "schemas"
+        / "vendor-interface-fixture-v0.1.schema.json",
+    )
+    simulate.add_argument(
+        "--bundle-schema",
+        type=Path,
+        default=default_project_root()
+        / "schemas"
+        / "simulation-bundle-v0.1.schema.json",
     )
 
     vendor = subcommands.add_parser("vendor", help="manage vendor SDK dependencies")
@@ -350,6 +425,29 @@ def run(args: argparse.Namespace) -> int:
         print(
             f"encoded non-executable fixture: {output} "
             f"({len(fixture['frames'])} frames, adapter={args.adapter})"
+        )
+        return 0
+
+    if args.command == "simulate":
+        manifest = build_simulation_bundle(
+            source_path=args.document,
+            source_license=args.source_license,
+            output_dir=args.output,
+            target_name=args.target,
+            registry_path=args.targets,
+            registry_schema_path=args.target_schema,
+            vendor_lock_path=args.lock,
+            cache_dir=args.cache_dir,
+            project_root=default_project_root(),
+            motion_schema_path=args.schema,
+            profile_schema_path=args.profile_schema,
+            mapping_schema_path=args.mapping_schema,
+            fixture_schema_path=args.fixture_schema,
+            bundle_schema_path=args.bundle_schema,
+        )
+        print(
+            f"simulation bundle: {args.output.expanduser().resolve()} "
+            f"(target={manifest['target']}, replay={manifest['result']['replay']})"
         )
         return 0
 

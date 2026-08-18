@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openhumanoid.dev/schemas/simulation-bundle-v0.1.schema.json",
+  "title": "OHMC simulation evidence bundle manifest v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "target",
+    "fidelity",
+    "result",
+    "capabilities",
+    "inputs",
+    "artifacts",
+    "warnings"
+  ],
+  "properties": {
+    "schema": { "const": "ohmc.simulation_bundle/v0.1" },
+    "target": { "type": "string", "minLength": 1 },
+    "fidelity": {
+      "enum": ["synthetic_contract_fixture", "official_vendor_model"]
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["replay", "motion_validation", "hardware_commands_sent"],
+      "properties": {
+        "replay": { "const": "pass" },
+        "motion_validation": { "enum": ["pass", "warning", "fail"] },
+        "hardware_commands_sent": { "const": false }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "semantic_joint_mapping",
+        "headless_kinematic_replay",
+        "vendor_interface_fixture",
+        "constrained_whole_body_ik",
+        "dynamic_controller_simulation",
+        "hardware_transport"
+      ],
+      "properties": {
+        "semantic_joint_mapping": { "type": "boolean" },
+        "headless_kinematic_replay": { "type": "boolean" },
+        "vendor_interface_fixture": { "type": "boolean" },
+        "constrained_whole_body_ik": { "type": "boolean" },
+        "dynamic_controller_simulation": { "type": "boolean" },
+        "hardware_transport": { "const": false }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_sha256",
+        "source_license",
+        "simulation_model_sha256",
+        "target_config_sha256"
+      ],
+      "properties": {
+        "source_sha256": { "$ref": "#/$defs/sha256" },
+        "source_license": { "type": "string", "minLength": 1 },
+        "simulation_model_sha256": { "$ref": "#/$defs/sha256" },
+        "target_config_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_motion",
+        "motion",
+        "replay_report",
+        "interface_fixture",
+        "robot_profile",
+        "semantic_mapping"
+      ],
+      "properties": {
+        "source_motion": { "$ref": "#/$defs/artifact" },
+        "motion": { "$ref": "#/$defs/artifact" },
+        "replay_report": { "$ref": "#/$defs/artifact" },
+        "interface_fixture": { "$ref": "#/$defs/artifact" },
+        "robot_profile": { "$ref": "#/$defs/artifact" },
+        "semantic_mapping": { "$ref": "#/$defs/artifact" }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}
