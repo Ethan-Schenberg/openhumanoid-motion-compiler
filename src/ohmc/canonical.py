@@ -60,6 +60,69 @@ def _vector_add(left: Vector3, right: Vector3) -> Vector3:
     return tuple(left[index] + right[index] for index in range(3))  # type: ignore[return-value]
 
 
+def quaternion_multiply(left: Quaternion, right: Quaternion) -> Quaternion:
+    """Compose normalized ``xyzw`` quaternions as ``left * right``."""
+    lx, ly, lz, lw = left
+    rx, ry, rz, rw = right
+    product = (
+        lw * rx + lx * rw + ly * rz - lz * ry,
+        lw * ry - lx * rz + ly * rw + lz * rx,
+        lw * rz + lx * ry - ly * rx + lz * rw,
+        lw * rw - lx * rx - ly * ry - lz * rz,
+    )
+    norm = math.sqrt(sum(value * value for value in product))
+    if norm == 0.0:
+        raise OhmcError("cannot normalize a zero quaternion")
+    return tuple(value / norm for value in product)  # type: ignore[return-value]
+
+
+def quaternion_rotate(quaternion: Quaternion, vector: Vector3) -> Vector3:
+    """Rotate a vector by a normalized ``xyzw`` quaternion."""
+    x, y, z, w = quaternion
+    vx, vy, vz = vector
+    tx = 2.0 * (y * vz - z * vy)
+    ty = 2.0 * (z * vx - x * vz)
+    tz = 2.0 * (x * vy - y * vx)
+    return (
+        vx + w * tx + (y * tz - z * ty),
+        vy + w * ty + (z * tx - x * tz),
+        vz + w * tz + (x * ty - y * tx),
+    )
+
+
+def forward_kinematics(
+    joints: list[dict[str, Any]],
+    local_translations: list[Vector3],
+    local_rotations: list[Quaternion],
+) -> tuple[list[Vector3], list[Quaternion]]:
+    """Evaluate canonical local poses for a parent-before-child hierarchy."""
+    if len(local_translations) != len(joints) or len(local_rotations) != len(joints):
+        raise OhmcError("forward kinematics pose count must match skeleton joints")
+    world_positions: list[Vector3] = []
+    world_rotations: list[Quaternion] = []
+    for joint_index, joint in enumerate(joints):
+        parent_index = joint["parent_index"]
+        if parent_index is None:
+            world_positions.append(local_translations[joint_index])
+            world_rotations.append(local_rotations[joint_index])
+            continue
+        world_positions.append(
+            _vector_add(
+                world_positions[parent_index],
+                quaternion_rotate(
+                    world_rotations[parent_index],
+                    local_translations[joint_index],
+                ),
+            )
+        )
+        world_rotations.append(
+            quaternion_multiply(
+                world_rotations[parent_index], local_rotations[joint_index]
+            )
+        )
+    return world_positions, world_rotations
+
+
 def _rotation(axis: str, radians: float) -> Matrix3:
     cosine = math.cos(radians)
     sine = math.sin(radians)
@@ -129,9 +192,10 @@ def _matrix_to_quaternion(matrix: Matrix3) -> Quaternion:
     return normalized  # type: ignore[return-value]
 
 
-def _config_hash(config: dict[str, Any]) -> str:
+def object_sha256(value: Any) -> str:
+    """Hash a JSON-compatible value using OHMC's canonical JSON encoding."""
     encoded = json.dumps(
-        config, sort_keys=True, separators=(",", ":"), ensure_ascii=True
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=True
     ).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
 
@@ -241,6 +305,9 @@ def bvh_to_canonical_motion(
             {
                 "time": frame_index * motion.frame_time,
                 "root_translation_m": list(root_translation),
+                "local_translations_m": [
+                    list(translation) for translation in local_translations
+                ],
                 "local_rotations_xyzw": [
                     list(_matrix_to_quaternion(matrix)) for matrix in local_rotations
                 ],
@@ -259,6 +326,13 @@ def bvh_to_canonical_motion(
         "rotation_channel_evaluation": "declared_order_postmultiply",
         "quaternion_order": "xyzw",
     }
+    frames = {
+        "convention": CANONICAL_CONVENTION,
+        "source_convention": source_convention,
+        "length_unit": "meter",
+    }
+    skeleton = {"joints": skeleton_joints}
+    canonical_payload = {"frames": frames, "skeleton": skeleton, "samples": samples}
     return {
         "schema": "ohmc.canonical_motion/v0.1",
         "source": {
@@ -267,18 +341,16 @@ def bvh_to_canonical_motion(
             "license": source_license,
             "uri": source_name,
         },
-        "frames": {
-            "convention": CANONICAL_CONVENTION,
-            "source_convention": source_convention,
-            "length_unit": "meter",
-        },
-        "skeleton": {"joints": skeleton_joints},
+        "frames": frames,
+        "skeleton": skeleton,
         "samples": samples,
         "passes": [
             {
                 "name": "bvh_canonical_forward_kinematics",
                 "version": "0.1.0",
-                "config_sha256": _config_hash(config),
+                "config_sha256": object_sha256(config),
+                "input_sha256": hashlib.sha256(source_bytes).hexdigest(),
+                "output_sha256": object_sha256(canonical_payload),
                 "metrics": {
                     "joint_count": len(motion.joints),
                     "frame_count": len(motion.frames),
@@ -330,6 +402,7 @@ def validate_canonical_motion(
             issues.append(f"samples.{sample_index}.time: must be strictly increasing")
         previous_time = timestamp
         for field in (
+            "local_translations_m",
             "local_rotations_xyzw",
             "world_positions_m",
             "world_rotations_xyzw",
@@ -339,7 +412,11 @@ def validate_canonical_motion(
                     f"samples.{sample_index}.{field}: expected {joint_count} entries, "
                     f"got {len(sample[field])}"
                 )
-        vectors = [sample["root_translation_m"], *sample["world_positions_m"]]
+        vectors = [
+            sample["root_translation_m"],
+            *sample["local_translations_m"],
+            *sample["world_positions_m"],
+        ]
         quaternions = [
             *sample["local_rotations_xyzw"],
             *sample["world_rotations_xyzw"],

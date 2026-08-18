@@ -50,6 +50,8 @@ def test_one_command_simulation_builds_auditable_bundle(tmp_path: Path) -> None:
     }
     assert manifest["capabilities"]["headless_kinematic_replay"] is True
     assert manifest["capabilities"]["canonical_source_kinematics"] is True
+    assert manifest["capabilities"]["morphology_scaling"] is True
+    assert manifest["capabilities"]["canonical_timeline_resampling"] is True
     assert manifest["capabilities"]["trajectory_derivatives"] is True
     assert manifest["capabilities"]["mapping_completeness_report"] is True
     assert manifest["capabilities"]["constrained_whole_body_ik"] is False
@@ -65,6 +67,8 @@ def test_one_command_simulation_builds_auditable_bundle(tmp_path: Path) -> None:
     canonical = json.loads((output / "canonical-motion.json").read_text())
     assert canonical["validation"]["status"] == "pass"
     assert len(canonical["samples"]) == 3
+    assert canonical["passes"][-1]["name"] == "canonical_morphology_timeline_normalization"
+    assert (output / "canonical.source.json").is_file()
     quality = json.loads((output / "quality-report.json").read_text())
     assert quality["status"] == "warning"
     assert quality["mapping"]["mapped_joint_count"] == 2

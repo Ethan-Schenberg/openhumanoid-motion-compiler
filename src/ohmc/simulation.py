@@ -18,6 +18,7 @@ from .bvh import bvh_to_motion_ir, load_bvh
 from .canonical import bvh_to_canonical_motion, validate_canonical_motion
 from .errors import OhmcError
 from .ir import load_json, validate_motion_ir
+from .normalization import normalize_canonical_motion
 from .profiles import (
     load_yaml_object,
     map_motion_ir,
@@ -258,7 +259,7 @@ def build_simulation_bundle(
         raise OhmcError("invalid semantic mapping: " + "; ".join(mapping_issues))
 
     bvh_motion = load_bvh(source_path)
-    canonical_motion = bvh_to_canonical_motion(
+    canonical_source = bvh_to_canonical_motion(
         bvh_motion,
         source_bytes=source_bytes,
         source_name=source_path.name,
@@ -267,11 +268,25 @@ def build_simulation_bundle(
         source_length_unit=source_length_unit,
     )
     canonical_issues = validate_canonical_motion(
-        canonical_motion, load_json(canonical_schema_path)
+        canonical_source, load_json(canonical_schema_path)
     )
     if canonical_issues:
         raise OhmcError(
             "generated invalid canonical motion: " + "; ".join(canonical_issues)
+        )
+    normalization = target["normalization"]
+    canonical_motion = normalize_canonical_motion(
+        canonical_source,
+        morphology_scale=float(normalization["morphology_scale"]),
+        rate_hz=float(normalization["rate_hz"]),
+    )
+    normalized_issues = validate_canonical_motion(
+        canonical_motion, load_json(canonical_schema_path)
+    )
+    if normalized_issues:
+        raise OhmcError(
+            "generated invalid normalized canonical motion: "
+            + "; ".join(normalized_issues)
         )
     source_motion = derive_motion_kinematics(
         bvh_to_motion_ir(
@@ -315,6 +330,7 @@ def build_simulation_bundle(
     )
     try:
         artifacts = {
+            "canonical_source": "canonical.source.json",
             "canonical_motion": "canonical-motion.json",
             "source_motion": "motion.source.json",
             "motion": "motion.json",
@@ -324,6 +340,7 @@ def build_simulation_bundle(
             "robot_profile": "configs/robot-profile.yaml",
             "semantic_mapping": "configs/semantic-mapping.yaml",
         }
+        _write_json(temporary / artifacts["canonical_source"], canonical_source)
         _write_json(temporary / artifacts["canonical_motion"], canonical_motion)
         _write_json(temporary / artifacts["source_motion"], source_motion)
         _write_json(temporary / artifacts["motion"], mapped_motion)
@@ -350,6 +367,8 @@ def build_simulation_bundle(
             },
             "capabilities": {
                 "canonical_source_kinematics": True,
+                "morphology_scaling": True,
+                "canonical_timeline_resampling": True,
                 "trajectory_derivatives": True,
                 "mapping_completeness_report": True,
                 "semantic_joint_mapping": True,
@@ -364,6 +383,8 @@ def build_simulation_bundle(
                 "source_license": source_license,
                 "source_convention": source_convention,
                 "source_length_unit": source_length_unit,
+                "morphology_scale": normalization["morphology_scale"],
+                "normalization_rate_hz": normalization["rate_hz"],
                 "simulation_model_sha256": sha256_file(model_path),
                 "target_config_sha256": _object_sha256(target),
             },

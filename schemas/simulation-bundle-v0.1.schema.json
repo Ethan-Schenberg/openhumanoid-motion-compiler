@@ -42,6 +42,8 @@
       "required": [
         "semantic_joint_mapping",
         "canonical_source_kinematics",
+        "morphology_scaling",
+        "canonical_timeline_resampling",
         "trajectory_derivatives",
         "mapping_completeness_report",
         "headless_kinematic_replay",
@@ -52,6 +54,8 @@
       ],
       "properties": {
         "canonical_source_kinematics": { "type": "boolean" },
+        "morphology_scaling": { "type": "boolean" },
+        "canonical_timeline_resampling": { "type": "boolean" },
         "trajectory_derivatives": { "type": "boolean" },
         "mapping_completeness_report": { "type": "boolean" },
         "semantic_joint_mapping": { "type": "boolean" },
@@ -70,6 +74,8 @@
         "source_license",
         "source_convention",
         "source_length_unit",
+        "morphology_scale",
+        "normalization_rate_hz",
         "simulation_model_sha256",
         "target_config_sha256"
       ],
@@ -78,6 +84,8 @@
         "source_license": { "type": "string", "minLength": 1 },
         "source_convention": { "type": "string", "minLength": 1 },
         "source_length_unit": { "enum": ["m", "cm", "mm"] },
+        "morphology_scale": { "type": "number", "exclusiveMinimum": 0 },
+        "normalization_rate_hz": { "type": "number", "exclusiveMinimum": 0 },
         "simulation_model_sha256": { "$ref": "#/$defs/sha256" },
         "target_config_sha256": { "$ref": "#/$defs/sha256" }
       }
@@ -87,6 +95,7 @@
       "additionalProperties": false,
       "required": [
         "source_motion",
+        "canonical_source",
         "canonical_motion",
         "motion",
         "replay_report",
@@ -96,6 +105,7 @@
         "semantic_mapping"
       ],
       "properties": {
+        "canonical_source": { "$ref": "#/$defs/artifact" },
         "canonical_motion": { "$ref": "#/$defs/artifact" },
         "source_motion": { "$ref": "#/$defs/artifact" },
         "motion": { "$ref": "#/$defs/artifact" },

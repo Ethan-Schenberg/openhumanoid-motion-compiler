@@ -150,6 +150,10 @@ into a prototype Motion IR artifact:
   --source-convention right_handed_x_right_y_up_z_backward \
   --source-length-unit m \
   --output build/canonical-motion.json
+.venv/bin/ohmc normalize-canonical build/canonical-motion.json \
+  --rate-hz 100 \
+  --morphology-scale 0.9 \
+  --output build/canonical-motion-normalized.json
 .venv/bin/ohmc import-bvh examples/simple_motion.bvh \
   --source-license CC0-1.0 \
   --output build/simple_motion.json
@@ -164,6 +168,12 @@ channels in declared order; converts source axes and units into right-handed
 joint poses. BVH files do not reliably declare axes or length units, so both
 inputs are mandatory instead of guessed. See
 [the canonical motion contract](docs/CANONICAL_MOTION.md).
+
+The normalization pass preserves local joint translations, rescales skeleton
+morphology, resamples rotations with shortest-arc quaternion SLERP, preserves
+the exact source endpoint, and recomputes every world pose with forward
+kinematics. One-command simulation targets pin both normalization rate and
+morphology scale, and bundle the source and normalized canonical artifacts.
 
 The separate Motion IR importer converts rotation values from degrees to
 radians and records the source hash, timing, channel order, configuration hash,

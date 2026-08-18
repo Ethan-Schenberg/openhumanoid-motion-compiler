@@ -52,6 +52,10 @@ def test_canonical_forward_kinematics_matches_golden_coordinates() -> None:
         },
     ]
     first = document["samples"][0]
+    assert first["local_translations_m"] == [
+        [0.0, 0.0, 0.9],
+        [0.0, 0.0, -0.4],
+    ]
     assert first["world_positions_m"] == [[0.0, 0.0, 0.9], [0.0, 0.0, 0.5]]
     assert first["local_rotations_xyzw"] == [
         [0.0, 0.0, 0.0, 1.0],

@@ -26,6 +26,7 @@
         "semantic_mapping",
         "adapter",
         "fidelity",
+        "normalization",
         "simulator"
       ],
       "properties": {
@@ -36,6 +37,15 @@
         },
         "fidelity": {
           "enum": ["synthetic_contract_fixture", "official_vendor_model"]
+        },
+        "normalization": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["morphology_scale", "rate_hz"],
+          "properties": {
+            "morphology_scale": { "type": "number", "exclusiveMinimum": 0 },
+            "rate_hz": { "type": "number", "exclusiveMinimum": 0 }
+          }
         },
         "simulator": {
           "type": "object",

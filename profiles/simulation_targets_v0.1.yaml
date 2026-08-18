@@ -5,6 +5,9 @@ targets:
     semantic_mapping: profiles/mappings/simple_bvh_semantics_v1.yaml
     adapter: unitree-g1-lowcmd
     fidelity: synthetic_contract_fixture
+    normalization:
+      morphology_scale: 1.0
+      rate_hz: 50.0
     simulator:
       backend: mujoco
       model:
@@ -17,6 +20,9 @@ targets:
     semantic_mapping: profiles/mappings/simple_bvh_semantics_v1.yaml
     adapter: unitree-g1-lowcmd
     fidelity: official_vendor_model
+    normalization:
+      morphology_scale: 1.0
+      rate_hz: 50.0
     simulator:
       backend: mujoco
       model:
@@ -31,6 +37,9 @@ targets:
     semantic_mapping: profiles/mappings/simple_bvh_semantics_v1.yaml
     adapter: agibot-x2-joint-command-array
     fidelity: official_vendor_model
+    normalization:
+      morphology_scale: 1.0
+      rate_hz: 50.0
     simulator:
       backend: mujoco
       model:

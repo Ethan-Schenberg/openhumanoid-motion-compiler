@@ -68,7 +68,10 @@ validation gaps:
   skeleton. Implemented with explicit source convention/unit, ordered Euler
   evaluation, local quaternions, and world-pose golden tests.
 - Add morphology scaling and deterministic timeline resampling passes.
-- Emit pass-level input/output hashes and metrics.
+  Implemented with preserved local translations, shortest-arc quaternion SLERP,
+  exact-duration endpoint policy, and world-pose FK recomputation.
+- Emit pass-level input/output hashes and metrics. Implemented for BVH
+  canonicalization and morphology/timeline normalization.
 - Gate: mirrored, rotated, and different-height fixtures produce stable expected
   canonical coordinates on Python 3.10–3.12.
 

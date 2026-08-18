@@ -35,7 +35,27 @@ For each joint and frame, OHMC:
 3. changes basis into the canonical frame;
 4. combines the scaled joint offset with local position channels;
 5. runs parent-to-child forward kinematics;
-6. emits local rotations plus world positions and rotations.
+6. emits local translations and rotations plus world positions and rotations.
+
+The local translations are part of the contract, rather than an implementation
+detail. This lets later passes change skeleton morphology or sampling rate and
+then recompute world poses instead of scaling already-evaluated coordinates.
+
+## Morphology and timeline normalization
+
+`ohmc normalize-canonical` applies a uniform positive morphology scale to rest
+offsets, root translation, and per-joint local translations. It resamples the
+source interval at an explicit target rate using linear translation
+interpolation and shortest-arc quaternion SLERP. World poses are discarded and
+recomputed from the interpolated local poses with deterministic forward
+kinematics.
+
+The source's first and final timestamps are always preserved. If the duration
+is not an integer number of target intervals, a final shorter interval is
+emitted and recorded as a pass warning rather than truncating the motion or
+silently changing its duration. The pass records its configuration, input, and
+output hashes plus input/output sample counts, duration, target rate, and
+morphology scale. Adjacent pass hashes form an auditable content chain.
 
 The artifact records its source SHA-256, convention, unit conversion, pass
 configuration hash, joint/frame counts, and validation result. Validation checks
@@ -44,9 +64,10 @@ per-frame joint counts, and unit quaternion norms.
 
 ## Current boundary
 
-Canonical source kinematics are now implemented, but the existing semantic
-joint-vector mapper does not yet solve against the canonical world poses.
-Morphology scaling, landmark semantics, constrained whole-body IK, contact
-preservation, and dynamic control remain later compiler passes. Consequently,
+Canonical source kinematics, morphology scaling, and timeline resampling are
+implemented, but the existing semantic joint-vector mapper does not yet solve
+against the canonical world poses. Landmark semantics, constrained whole-body
+IK, contact preservation, and dynamic control remain later compiler passes.
+Consequently,
 the one-command bundle can report canonical source motion as `pass` while its
 robot Motion IR still correctly reports a mapping warning.

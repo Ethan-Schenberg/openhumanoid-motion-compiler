@@ -19,6 +19,7 @@ from .canonical import (
 )
 from .errors import OhmcError
 from .ir import load_json, validate_motion_ir
+from .normalization import normalize_canonical_motion
 from .profiles import (
     load_yaml_object,
     map_motion_ir,
@@ -74,6 +75,23 @@ def build_parser() -> argparse.ArgumentParser:
         "--source-convention",
         choices=SUPPORTED_SOURCE_CONVENTIONS,
         required=True,
+    )
+
+    normalize_canonical = subcommands.add_parser(
+        "normalize-canonical",
+        help="scale and resample canonical skeleton motion with deterministic FK",
+    )
+    normalize_canonical.add_argument("document", type=Path)
+    normalize_canonical.add_argument("--output", type=Path, required=True)
+    normalize_canonical.add_argument("--morphology-scale", type=float, default=1.0)
+    normalize_canonical.add_argument("--rate-hz", type=float, required=True)
+    normalize_canonical.add_argument("--force", action="store_true")
+    normalize_canonical.add_argument(
+        "--schema",
+        type=Path,
+        default=default_project_root()
+        / "schemas"
+        / "canonical-motion-v0.1.schema.json",
     )
     canonicalize_bvh.add_argument(
         "--source-length-unit",
@@ -431,6 +449,36 @@ def run(args: argparse.Namespace) -> int:
             f"canonical motion: {output} "
             f"({len(document['skeleton']['joints'])} joints, "
             f"{len(document['samples'])} frames)"
+        )
+        return 0
+
+    if args.command == "normalize-canonical":
+        output = args.output.expanduser().resolve()
+        if output.exists() and not args.force:
+            raise OhmcError(f"refusing to overwrite existing output: {output}")
+        document = load_json(args.document)
+        schema = load_json(args.schema)
+        issues = validate_canonical_motion(document, schema)
+        if issues:
+            raise OhmcError(
+                "cannot normalize invalid canonical motion: " + "; ".join(issues)
+            )
+        normalized = normalize_canonical_motion(
+            document,
+            morphology_scale=args.morphology_scale,
+            rate_hz=args.rate_hz,
+        )
+        output_issues = validate_canonical_motion(normalized, schema)
+        if output_issues:
+            raise OhmcError(
+                "generated invalid normalized motion: " + "; ".join(output_issues)
+            )
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(normalized, indent=2) + "\n", encoding="utf-8")
+        print(
+            f"normalized canonical motion: {output} "
+            f"({len(normalized['samples'])} samples, rate={args.rate_hz:g} Hz, "
+            f"scale={args.morphology_scale:g})"
         )
         return 0
 
