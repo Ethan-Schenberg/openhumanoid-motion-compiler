@@ -1,0 +1,26 @@
+schema: ohmc.isaaclab_integration_lock/v0.1
+status: requires_target_validation
+runtime:
+  python: ">=3.12,<3.13"
+  isaac_sim: 6.0.1
+  container_base: nvcr.io/nvidia/isaac-sim:6.0.1
+  dockerfile_sha256: d1319d5542d6a45171a6336ff5761083754436b8ca11f67229c078d0ab8f34ae
+  compose_sha256: 41567cdb3d058bbc19cb266a43cd5b41126d2b90f448c4922569519b977d0946
+  image_digest: target_preflight_required
+isaac_lab:
+  tag: v3.0.0-beta2.patch1
+  revision: ffff603eafc6b74264a5261cc0183d6a65390d78
+  source: https://github.com/isaac-sim/IsaacLab
+  license: BSD-3-Clause
+rsl_rl:
+  version: 5.0.1
+  source: https://github.com/leggedrobotics/rsl_rl
+  license: BSD-3-Clause
+x2_model:
+  source: https://github.com/AgibotTech/agibot_x2_urdf
+  version: 1.3.0@77f43eb0904dae4c48ccd9154fee824f8ffd4d38
+  urdf_sha256: 1163b3c76b31c4ea0afd284b67b28948003ce46f7ea4b2d9826f1309e9af7f11
+  license: MulanPSL-2.0
+authority:
+  hardware_transport: disabled
+  simulation_only: true

@@ -6,9 +6,11 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 
-OpenHumanoid Motion Compiler (OHMC) is a proposed open-source ROS 2 motion-retargeting stack. It treats motion conversion as a compiler problem: human-motion sources are parsed into a robot-independent intermediate representation, transformed by explicit constraint passes, and emitted through simulator or robot-specific backends.
+OpenHumanoid Motion Compiler (OHMC) is an open-source humanoid motion and skill evidence platform. It treats motion conversion and policy training as auditable compiler workflows: inputs become versioned artifacts, pass explicit gates, and never silently acquire physical-robot authority.
 
-The project is currently in the **design and prototype stage**. Unitree and AgiBot X2 are first-class target platforms. Their official SDKs, robot models, simulators, and ROS 2 interfaces are integrated through pinned vendor manifests and dedicated adapters. No real-robot execution command is enabled by default in v0.1.
+The offline motion compiler is in the prototype stage. The new **OHMC 2.0 foundation** adds an AgiBot X2 Ultra 29-DoF RGB-D locomotion recipe, persistent training state machine, local beginner web console, pinned Isaac Lab/RSL-RL extension, evaluation gates, and Policy Bundle audit. No real-robot execution command is enabled.
+
+For the beginner workflow, architecture and exact validation boundary, start with [OHMC 2.0 X2 training platform](docs/TRAINING_PLATFORM.md).
 
 ## Why this project
 
@@ -74,6 +76,7 @@ Not included in v0.1:
 
 ## Documents
 
+- [OHMC 2.0 X2 training platform](docs/TRAINING_PLATFORM.md)
 - [2026-08-18 development and validation report](docs/PROJECT_REPORT_2026-08-18.md)
 - [Project white paper](docs/WHITEPAPER.md)
 - [v0.1 architecture](docs/ARCHITECTURE_V0.1.md)
@@ -89,8 +92,17 @@ Requires Python 3.10 or newer:
 
 ```bash
 python3 -m venv .venv
-.venv/bin/python -m pip install -e '.[dev,mujoco]'
+.venv/bin/python -m pip install -e '.[dev,mujoco,web]'
 ```
+
+Open the local training console (production training still requires the pinned WSL2/Isaac environment):
+
+```bash
+.venv/bin/ohmc doctor
+.venv/bin/ohmc web
+```
+
+Then open <http://127.0.0.1:8000>. The web application has no hardware or joint-command route; completed training stops at evaluation.
 
 Run the complete offline pipeline with one command. This smoke target uses a
 small synthetic MuJoCo model while still exercising the Unitree G1 profile and

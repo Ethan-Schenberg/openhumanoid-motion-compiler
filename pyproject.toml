@@ -27,10 +27,17 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+  "httpx2>=2,<3",
   "pytest>=8,<9",
 ]
 mujoco = [
   "mujoco>=3.2,<4",
+]
+web = [
+  "fastapi>=0.115,<1",
+  "plotly>=6,<7",
+  "python-multipart>=0.0.20,<1",
+  "uvicorn>=0.34,<1",
 ]
 
 [project.scripts]

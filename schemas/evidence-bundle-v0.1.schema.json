@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openhumanoid.dev/schemas/evidence-bundle-v0.1.schema.json",
+  "title": "OHMC Training Evidence Bundle v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "run_id", "created_at", "status", "metrics", "gates", "levels", "authority"],
+  "properties": {
+    "schema": { "const": "ohmc.evidence_bundle/v0.1" },
+    "run_id": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string", "format": "date-time" },
+    "status": { "enum": ["pass", "fail"] },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "episodes"],
+      "properties": {
+        "path": { "const": "metrics.json" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "episodes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "gates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "level", "metric", "operator", "expected", "actual", "status"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "level": { "enum": ["controller_sim", "sim2sim", "runtime_fault"] },
+          "metric": { "type": "string", "minLength": 1 },
+          "operator": { "enum": ["ge", "le", "eq"] },
+          "expected": { "type": "number" },
+          "actual": { "type": ["number", "null"] },
+          "status": { "enum": ["pass", "fail"] }
+        }
+      }
+    },
+    "levels": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["controller_sim", "sim2sim", "hardware"],
+      "properties": {
+        "controller_sim": { "enum": ["pass", "fail"] },
+        "sim2sim": { "enum": ["pass", "fail", "not_reached"] },
+        "hardware": { "const": "not_tested" }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "hardware_transport", "operator_review_required"],
+      "properties": {
+        "label": { "enum": ["simulation_failed", "simulation_passed"] },
+        "hardware_transport": { "const": false },
+        "operator_review_required": { "const": true }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

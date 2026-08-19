@@ -1,6 +1,30 @@
 # OHMC North-Star Roadmap
 
-Status: active roadmap
+Status: active roadmap, expanded for OHMC 2.0 on 2026-08-19
+
+## OHMC 2.0 locomotion track
+
+The primary product track is now a beginner-usable, staged X2 Ultra training and deployment-evidence platform. The existing BVH/Motion IR compiler remains a reusable second skill track.
+
+Implemented foundation:
+
+- `TrainingRecipe`, `RunManifest`, `EvidenceBundle` and `PolicyBundle` schemas;
+- local FastAPI/SQLite/SSE console with doctor output, persistent runs, logs, plots, video and process controls;
+- exact X2 29-DoF locomotion profile with both head joints excluded;
+- pinned Isaac Lab v3 beta/RSL-RL 5.0.1 extension with asymmetric RGB-D PPO and six ordered curriculum stages;
+- checkpoint recovery, evaluation gates and simulation-only bundle verification;
+- LinkCraft as a separate official fast-performance lane.
+
+The next blocking gates are executed in order:
+
+1. Instantiate the official X2 URDF on the target WSL2 RTX 3070 and pass a standing-only smoke run.
+2. Measure 256-environment GPU memory and throughput; enable 512 only when the doctor proves sufficient memory.
+3. Train and evaluate flat locomotion with fixed and unseen seeds.
+4. Add automatic independent MuJoCo and official `x2_rl_deploy` simulator metrics instead of importing a hand-produced metrics file.
+5. Produce complete normalization, PD, camera-calibration and test-vector artifacts for the Policy Bundle.
+6. Implement the PS5 deadman/damping adapter only on the vendor-approved deployment host, then perform supported static tests under human control.
+
+None of these gates is satisfied by source code or a finite preview video alone.
 
 North star: licensed human motion to reproducible dual-vendor simulation evidence
 

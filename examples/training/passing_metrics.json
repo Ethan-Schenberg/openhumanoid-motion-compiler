@@ -1,0 +1,29 @@
+{
+  "schema": "ohmc.evaluation_metrics/v0.1",
+  "episodes": 100,
+  "metrics": {
+    "flat": {"no_fall_rate": 0.98},
+    "complex": {"completion_rate": 0.84},
+    "safety": {
+      "joint_limit_violations": 0,
+      "non_finite_count": 0,
+      "joint_mapping_errors": 0
+    },
+    "tracking": {
+      "linear_velocity_rmse_mps": 0.20,
+      "angular_velocity_rmse_radps": 0.29
+    },
+    "sim2sim": {
+      "flat_no_fall_rate": 0.94,
+      "complex_completion_rate": 0.74
+    },
+    "runtime": {"inference_p99_ms": 17.5},
+    "faults": {
+      "deadman_release_max_ms": 82,
+      "rgb_dropout_safe": 1,
+      "depth_dropout_safe": 1,
+      "gamepad_disconnect_safe": 1,
+      "policy_timeout_safe": 1
+    }
+  }
+}

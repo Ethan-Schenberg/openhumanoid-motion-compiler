@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openhumanoid.dev/schemas/training-recipe-v0.1.schema.json",
+  "title": "OHMC Training Recipe v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "id", "robot_profile", "task", "initialization", "backend",
+    "algorithm", "compute", "perception", "observation", "control",
+    "curriculum", "acceptance", "authority"
+  ],
+  "properties": {
+    "schema": { "const": "ohmc.training_recipe/v0.1" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]+$" },
+    "robot_profile": { "type": "string", "minLength": 1 },
+    "task": { "const": "velocity_rgbd_locomotion" },
+    "initialization": { "const": "random" },
+    "backend": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "runtime", "command", "versions"],
+      "properties": {
+        "id": { "enum": ["isaac_lab_rsl_rl", "fixture"] },
+        "runtime": { "enum": ["external", "fixture"] },
+        "command": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "versions": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "algorithm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "seed", "actor_critic", "num_steps_per_env", "max_iterations", "save_interval"],
+      "properties": {
+        "name": { "const": "ppo" },
+        "seed": { "type": "integer", "minimum": 0 },
+        "actor_critic": { "const": "asymmetric" },
+        "num_steps_per_env": { "type": "integer", "minimum": 8 },
+        "max_iterations": { "type": "integer", "minimum": 6 },
+        "save_interval": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "compute": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["device", "default_env_count", "high_memory_env_count", "high_memory_min_gib"],
+      "properties": {
+        "device": { "const": "cuda:0" },
+        "default_env_count": { "type": "integer", "minimum": 1, "maximum": 512 },
+        "high_memory_env_count": { "type": "integer", "minimum": 1, "maximum": 512 },
+        "high_memory_min_gib": { "type": "number", "minimum": 8 }
+      }
+    },
+    "perception": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height", "rate_hz", "rgb_channels", "depth_channels", "rgb_latent", "depth_latent", "stale_after_ms", "randomization"],
+      "properties": {
+        "width": { "const": 64 },
+        "height": { "const": 48 },
+        "rate_hz": { "const": 15 },
+        "rgb_channels": { "const": 3 },
+        "depth_channels": { "const": 1 },
+        "rgb_latent": { "const": 32 },
+        "depth_latent": { "const": 32 },
+        "stale_after_ms": { "const": 250 },
+        "randomization": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["lighting", "texture", "exposure", "depth_noise", "depth_dropout", "sensor_latency", "rgb_depth_misalignment"] }
+        }
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actor", "critic_privileged"],
+      "properties": {
+        "actor": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["base_angular_velocity", "projected_gravity", "velocity_command", "joint_position_error_29", "joint_velocity_29", "previous_action_29", "rgb_latent_32", "depth_latent_32", "image_age"] }
+        },
+        "critic_privileged": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["base_linear_velocity", "contact_forces", "terrain_height"] }
+        }
+      }
+    },
+    "control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action", "action_dimensions", "action_scale", "policy_rate_hz", "command_rate_hz", "interpolation", "head_control", "deadman"],
+      "properties": {
+        "action": { "const": "residual_joint_position" },
+        "action_dimensions": { "const": 29 },
+        "action_scale": { "const": 0.25 },
+        "policy_rate_hz": { "const": 50 },
+        "command_rate_hz": { "const": 500 },
+        "interpolation": { "const": "linear" },
+        "head_control": { "const": "excluded" },
+        "deadman": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["device", "mode", "release_target", "release_deadline_ms"],
+          "properties": {
+            "device": { "const": "ps5" },
+            "mode": { "const": "hold_to_enable" },
+            "release_target": { "const": "damping" },
+            "release_deadline_ms": { "const": 100 }
+          }
+        }
+      }
+    },
+    "curriculum": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "terrain"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "terrain": { "enum": ["stand", "flat", "slope", "uneven", "low_obstacle", "stairs"] }
+        }
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum_episodes", "gates"],
+      "properties": {
+        "minimum_episodes": { "type": "integer", "minimum": 100 },
+        "gates": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "level", "metric", "operator", "value"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "level": { "enum": ["controller_sim", "sim2sim", "runtime_fault"] },
+              "metric": { "type": "string", "minLength": 1 },
+              "operator": { "enum": ["ge", "le", "eq"] },
+              "value": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hardware_transport", "automatic_hardware_promotion", "operator_required"],
+      "properties": {
+        "hardware_transport": { "const": "disabled" },
+        "automatic_hardware_promotion": { "const": false },
+        "operator_required": { "const": true }
+      }
+    }
+  }
+}

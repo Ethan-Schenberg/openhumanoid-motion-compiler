@@ -1,0 +1,106 @@
+schema: ohmc.training_recipe/v0.1
+id: x2_rgbd_rough_ppo_v1
+robot_profile: agibot_x2_ultra_locomotion_29dof_v1
+task: velocity_rgbd_locomotion
+initialization: random
+backend:
+  id: isaac_lab_rsl_rl
+  runtime: external
+  command:
+    - ${OHMC_ISAACLAB_PYTHON}
+    - -m
+    - ohmc_x2.train
+    - --recipe
+    - "{recipe}"
+    - --run-dir
+    - "{run_dir}"
+  versions:
+    isaac_lab: v3.0.0-beta2.patch1
+    isaac_lab_revision: ffff603eafc6b74264a5261cc0183d6a65390d78
+    rsl_rl: 5.0.1
+algorithm:
+  name: ppo
+  seed: 42
+  actor_critic: asymmetric
+  num_steps_per_env: 24
+  max_iterations: 3000
+  save_interval: 50
+compute:
+  device: cuda:0
+  default_env_count: 256
+  high_memory_env_count: 512
+  high_memory_min_gib: 10
+perception:
+  width: 64
+  height: 48
+  rate_hz: 15
+  rgb_channels: 3
+  depth_channels: 1
+  rgb_latent: 32
+  depth_latent: 32
+  stale_after_ms: 250
+  randomization:
+    - lighting
+    - texture
+    - exposure
+    - depth_noise
+    - depth_dropout
+    - sensor_latency
+    - rgb_depth_misalignment
+observation:
+  actor:
+    - base_angular_velocity
+    - projected_gravity
+    - velocity_command
+    - joint_position_error_29
+    - joint_velocity_29
+    - previous_action_29
+    - rgb_latent_32
+    - depth_latent_32
+    - image_age
+  critic_privileged:
+    - base_linear_velocity
+    - contact_forces
+    - terrain_height
+control:
+  action: residual_joint_position
+  action_dimensions: 29
+  action_scale: 0.25
+  policy_rate_hz: 50
+  command_rate_hz: 500
+  interpolation: linear
+  head_control: excluded
+  deadman:
+    device: ps5
+    mode: hold_to_enable
+    release_target: damping
+    release_deadline_ms: 100
+curriculum:
+  - {id: 00_stand, terrain: stand}
+  - {id: 01_flat, terrain: flat}
+  - {id: 02_slope, terrain: slope}
+  - {id: 03_uneven, terrain: uneven}
+  - {id: 04_low_obstacle, terrain: low_obstacle}
+  - {id: 05_stairs, terrain: stairs}
+acceptance:
+  minimum_episodes: 100
+  gates:
+    - {id: flat_no_fall, level: controller_sim, metric: flat.no_fall_rate, operator: ge, value: 0.95}
+    - {id: rough_completion, level: controller_sim, metric: complex.completion_rate, operator: ge, value: 0.80}
+    - {id: joint_limits, level: controller_sim, metric: safety.joint_limit_violations, operator: eq, value: 0}
+    - {id: finite_values, level: controller_sim, metric: safety.non_finite_count, operator: eq, value: 0}
+    - {id: joint_mapping, level: controller_sim, metric: safety.joint_mapping_errors, operator: eq, value: 0}
+    - {id: linear_tracking, level: controller_sim, metric: tracking.linear_velocity_rmse_mps, operator: le, value: 0.25}
+    - {id: angular_tracking, level: controller_sim, metric: tracking.angular_velocity_rmse_radps, operator: le, value: 0.35}
+    - {id: mujoco_flat, level: sim2sim, metric: sim2sim.flat_no_fall_rate, operator: ge, value: 0.90}
+    - {id: mujoco_rough, level: sim2sim, metric: sim2sim.complex_completion_rate, operator: ge, value: 0.70}
+    - {id: inference_latency, level: runtime_fault, metric: runtime.inference_p99_ms, operator: le, value: 20}
+    - {id: deadman_release, level: runtime_fault, metric: faults.deadman_release_max_ms, operator: le, value: 100}
+    - {id: rgb_dropout, level: runtime_fault, metric: faults.rgb_dropout_safe, operator: eq, value: 1}
+    - {id: depth_dropout, level: runtime_fault, metric: faults.depth_dropout_safe, operator: eq, value: 1}
+    - {id: gamepad_disconnect, level: runtime_fault, metric: faults.gamepad_disconnect_safe, operator: eq, value: 1}
+    - {id: policy_timeout, level: runtime_fault, metric: faults.policy_timeout_safe, operator: eq, value: 1}
+authority:
+  hardware_transport: disabled
+  automatic_hardware_promotion: false
+  operator_required: true

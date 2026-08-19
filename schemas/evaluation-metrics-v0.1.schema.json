@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openhumanoid.dev/schemas/evaluation-metrics-v0.1.schema.json",
+  "title": "OHMC Evaluation Metrics v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "episodes", "metrics"],
+  "properties": {
+    "schema": { "const": "ohmc.evaluation_metrics/v0.1" },
+    "episodes": { "type": "integer", "minimum": 1 },
+    "metrics": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/metricValue" }
+    }
+  },
+  "$defs": {
+    "metricValue": {
+      "oneOf": [
+        { "type": "number" },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "$ref": "#/$defs/metricValue" }
+        }
+      ]
+    }
+  }
+}

@@ -6,8 +6,8 @@ import argparse
 import json
 import shutil
 import sys
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
@@ -21,7 +21,6 @@ from .canonical import (
     validate_canonical_motion,
 )
 from .errors import OhmcError
-from .ir import load_json, validate_motion_ir
 from .ik import (
     build_ik_problem,
     ik_result_to_motion_ir,
@@ -30,8 +29,9 @@ from .ik import (
     validate_ik_result,
     validate_ik_task_map,
 )
-from .normalization import normalize_canonical_motion
+from .ir import load_json, validate_motion_ir
 from .landmarks import landmark_coverage_report, validate_landmark_coverage
+from .normalization import normalize_canonical_motion
 from .profiles import (
     load_yaml_object,
     map_motion_ir,
@@ -45,10 +45,20 @@ from .quality import (
 )
 from .replay import replay_mujoco
 from .simulation import build_simulation_bundle, build_simulation_matrix
+from .training import (
+    TrainingStore,
+    evaluate_run,
+    execute_run,
+    load_training_recipe,
+    prepare_policy_bundle,
+    prepare_run,
+    training_doctor_report,
+    verify_policy_bundle,
+)
 from .vendor import (
     default_cache_dir,
-    import_official_artifact,
     doctor_report,
+    import_official_artifact,
     load_vendor_lock,
     status_all,
     sync_git_vendor,
@@ -473,6 +483,192 @@ def build_parser() -> argparse.ArgumentParser:
         default=default_project_root()
         / "schemas"
         / "simulation-matrix-v0.1.schema.json",
+    )
+
+    training_doctor = subcommands.add_parser(
+        "doctor", help="check the local X2 training environment"
+    )
+    training_doctor.add_argument(
+        "--recipe",
+        type=Path,
+        default=default_project_root()
+        / "examples"
+        / "training"
+        / "x2_rgbd_rough_ppo_v1.yaml",
+    )
+    training_doctor.add_argument(
+        "--robot",
+        "--profile",
+        type=Path,
+        default=default_project_root()
+        / "profiles"
+        / "agibot_x2_ultra_locomotion_29dof_v1.yaml",
+    )
+    training_doctor.add_argument("--json", action="store_true")
+    training_doctor.add_argument(
+        "--recipe-schema",
+        type=Path,
+        default=default_project_root()
+        / "schemas"
+        / "training-recipe-v0.1.schema.json",
+    )
+    training_doctor.add_argument(
+        "--profile-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "robot-profile-v0.1.schema.json",
+    )
+
+    train = subcommands.add_parser(
+        "train", help="create, preflight, and run a versioned training recipe"
+    )
+    train.add_argument(
+        "recipe",
+        type=Path,
+        nargs="?",
+        help="TrainingRecipe YAML (random initialization only)",
+    )
+    train.add_argument(
+        "--resume-run",
+        help="resume an interrupted run from its own curriculum checkpoint",
+    )
+    train.add_argument(
+        "--runs-dir", type=Path, default=default_project_root() / "build" / "training-runs"
+    )
+    train.add_argument(
+        "--robot",
+        "--profile",
+        type=Path,
+        default=default_project_root()
+        / "profiles"
+        / "agibot_x2_ultra_locomotion_29dof_v1.yaml",
+    )
+    train.add_argument(
+        "--prepare-only",
+        action="store_true",
+        help="create and preflight the run without launching the backend",
+    )
+    train.add_argument(
+        "--recipe-schema",
+        type=Path,
+        default=default_project_root()
+        / "schemas"
+        / "training-recipe-v0.1.schema.json",
+    )
+    train.add_argument(
+        "--run-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "run-manifest-v0.1.schema.json",
+    )
+    train.add_argument(
+        "--profile-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "robot-profile-v0.1.schema.json",
+    )
+
+    evaluate = subcommands.add_parser(
+        "evaluate", help="apply controller, Sim2Sim, and runtime fault gates"
+    )
+    evaluate.add_argument("run_id")
+    evaluate.add_argument("--metrics", type=Path, required=True)
+    evaluate.add_argument(
+        "--runs-dir", type=Path, default=default_project_root() / "build" / "training-runs"
+    )
+    evaluate.add_argument(
+        "--run-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "run-manifest-v0.1.schema.json",
+    )
+    evaluate.add_argument(
+        "--metrics-schema",
+        type=Path,
+        default=default_project_root()
+        / "schemas"
+        / "evaluation-metrics-v0.1.schema.json",
+    )
+    evaluate.add_argument(
+        "--evidence-schema",
+        type=Path,
+        default=default_project_root()
+        / "schemas"
+        / "evidence-bundle-v0.1.schema.json",
+    )
+
+    deploy = subcommands.add_parser(
+        "deploy", help="prepare or verify a simulation-only policy candidate"
+    )
+    deploy_commands = deploy.add_subparsers(dest="deploy_command", required=True)
+    deploy_prepare = deploy_commands.add_parser(
+        "prepare", help="build an audited policy bundle after E3 Sim2Sim"
+    )
+    deploy_prepare.add_argument("run_id")
+    deploy_prepare.add_argument("--policy", type=Path, required=True)
+    deploy_prepare.add_argument("--output", type=Path, required=True)
+    deploy_prepare.add_argument(
+        "--artifact",
+        action="append",
+        default=[],
+        metavar="ROLE=PATH",
+        help="add checkpoint, normalization, camera_calibration, or test_vectors",
+    )
+    deploy_prepare.add_argument(
+        "--runs-dir", type=Path, default=default_project_root() / "build" / "training-runs"
+    )
+    deploy_prepare.add_argument(
+        "--robot",
+        "--profile",
+        type=Path,
+        default=default_project_root()
+        / "profiles"
+        / "agibot_x2_ultra_locomotion_29dof_v1.yaml",
+    )
+    deploy_prepare.add_argument(
+        "--run-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "run-manifest-v0.1.schema.json",
+    )
+    deploy_prepare.add_argument(
+        "--profile-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "robot-profile-v0.1.schema.json",
+    )
+    deploy_prepare.add_argument(
+        "--policy-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "policy-bundle-v0.1.schema.json",
+    )
+    deploy_verify = deploy_commands.add_parser(
+        "verify", help="verify policy-bundle schemas, paths, hashes, and authority"
+    )
+    deploy_verify.add_argument("directory", type=Path)
+    deploy_verify.add_argument(
+        "--policy-schema",
+        type=Path,
+        default=default_project_root() / "schemas" / "policy-bundle-v0.1.schema.json",
+    )
+
+    web = subcommands.add_parser(
+        "web", help="open the local beginner training dashboard"
+    )
+    web.add_argument("--host", default="127.0.0.1")
+    web.add_argument("--port", type=int, default=8000)
+    web.add_argument(
+        "--runs-dir", type=Path, default=default_project_root() / "build" / "training-runs"
+    )
+    web.add_argument(
+        "--recipe",
+        type=Path,
+        default=default_project_root()
+        / "examples"
+        / "training"
+        / "x2_rgbd_rough_ppo_v1.yaml",
+    )
+    web.add_argument(
+        "--robot",
+        "--profile",
+        type=Path,
+        default=default_project_root()
+        / "profiles"
+        / "agibot_x2_ultra_locomotion_29dof_v1.yaml",
     )
 
     vendor = subcommands.add_parser("vendor", help="manage vendor SDK dependencies")
@@ -1026,6 +1222,132 @@ def run(args: argparse.Namespace) -> int:
             f"simulation bundle: {args.output.expanduser().resolve()} "
             f"(target={manifest['target']}, replay={manifest['result']['replay']})"
         )
+        return 0
+
+    if args.command == "doctor":
+        recipe, issues = load_training_recipe(args.recipe, args.recipe_schema)
+        if issues:
+            raise OhmcError("invalid training recipe: " + "; ".join(issues))
+        report = training_doctor_report(
+            recipe,
+            recipe_path=args.recipe.expanduser().resolve(),
+            profile_path=args.robot,
+            profile_schema_path=args.profile_schema,
+        )
+        if args.json:
+            print(json.dumps(report, indent=2))
+        else:
+            print(f"training environment: {'ready' if report['ready'] else 'not ready'}")
+            if report["recommended_env_count"] is not None:
+                print(f"recommended parallel environments: {report['recommended_env_count']}")
+            for check in report["checks"]:
+                print(f"{check['status'].upper():<7} {check['name']}: {check['detail']}")
+                if check.get("fix"):
+                    print(f"        fix: {check['fix']}")
+        return 0 if report["ready"] else 1
+
+    if args.command == "train":
+        store = TrainingStore(args.runs_dir, run_schema_path=args.run_schema)
+        if args.resume_run:
+            store.recover_orphaned_runs()
+            code = execute_run(store, args.resume_run, resume=True)
+            print(f"run state: {store.get(args.resume_run)['state']}")
+            return code
+        if args.recipe is None:
+            raise OhmcError("a TrainingRecipe path is required unless --resume-run is used")
+        recipe, issues = load_training_recipe(args.recipe, args.recipe_schema)
+        if issues:
+            raise OhmcError("invalid training recipe: " + "; ".join(issues))
+        if recipe["robot_profile"] != args.robot.stem:
+            raise OhmcError(
+                f"recipe expects robot profile {recipe['robot_profile']}, "
+                f"but --robot points to {args.robot.stem}"
+            )
+        manifest, report = prepare_run(
+            store,
+            recipe,
+            args.recipe,
+            profile_path=args.robot,
+            profile_schema_path=args.profile_schema,
+        )
+        run_id = manifest["run_id"]
+        print(f"training run: {run_id}")
+        print(f"run directory: {store.run_dir(run_id)}")
+        print(f"preflight: {'pass' if report['ready'] else 'blocked'}")
+        if args.prepare_only or not report["ready"]:
+            return 0 if report["ready"] else 1
+        code = execute_run(store, run_id)
+        print(f"run state: {store.get(run_id)['state']}")
+        return code
+
+    if args.command == "evaluate":
+        store = TrainingStore(args.runs_dir, run_schema_path=args.run_schema)
+        evidence = evaluate_run(
+            store,
+            args.run_id,
+            args.metrics,
+            metrics_schema_path=args.metrics_schema,
+            evidence_schema_path=args.evidence_schema,
+        )
+        passed = sum(gate["status"] == "pass" for gate in evidence["gates"])
+        print(
+            f"evaluation: {evidence['status']} "
+            f"({passed}/{len(evidence['gates'])} gates passed)"
+        )
+        print(f"authority: {evidence['authority']['label']}; hardware not tested")
+        return 0 if evidence["status"] == "pass" else 1
+
+    if args.command == "deploy":
+        if args.deploy_command == "verify":
+            report = verify_policy_bundle(
+                args.directory, policy_schema_path=args.policy_schema
+            )
+            print(f"policy bundle: {report['status']}")
+            print(f"authority: {report['authority']}")
+            for issue in report["issues"]:
+                print(f"ERROR {issue}")
+            return 0 if report["status"] == "pass" else 1
+        extras: list[tuple[str, Path]] = []
+        for definition in args.artifact:
+            role, separator, raw_path = definition.partition("=")
+            if not separator or not role or not raw_path:
+                raise OhmcError("--artifact must use ROLE=PATH")
+            extras.append((role, Path(raw_path)))
+        store = TrainingStore(args.runs_dir, run_schema_path=args.run_schema)
+        bundle = prepare_policy_bundle(
+            store,
+            args.run_id,
+            policy_path=args.policy,
+            output_dir=args.output,
+            profile_path=args.robot,
+            profile_schema_path=args.profile_schema,
+            policy_schema_path=args.policy_schema,
+            extra_artifacts=extras,
+        )
+        print(f"policy bundle: {args.output.expanduser().resolve()}")
+        print(f"bundle id: {bundle['bundle_id']}")
+        print("authority: simulation-only; operator review required")
+        return 0
+
+    if args.command == "web":
+        try:
+            import uvicorn
+
+            from .web import create_app
+        except ImportError as exc:
+            raise OhmcError(
+                "web dependencies are missing; install with "
+                "python -m pip install -e '.[web]'"
+            ) from exc
+        app = create_app(
+            runs_dir=args.runs_dir,
+            default_recipe=args.recipe,
+            robot_profile=args.robot,
+            project_root=default_project_root(),
+        )
+        print(f"OHMC dashboard: http://{args.host}:{args.port}")
+        print("hardware transport: disabled")
+        uvicorn.run(app, host=args.host, port=args.port)
         return 0
 
     lock = load_vendor_lock(args.lock)

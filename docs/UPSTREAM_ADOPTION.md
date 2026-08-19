@@ -2,7 +2,7 @@
 
 Status: active engineering decision record
 
-Last reviewed: 2026-08-18
+Last reviewed: 2026-08-19
 
 OHMC is not intended to become another general-purpose IK library, physics
 simulator, reinforcement-learning framework, or ROS 2 control stack. Its useful
@@ -24,6 +24,9 @@ adapters, quality gates, and independently verifiable artifacts.
 | [GVHMR](https://github.com/zju3dv/GVHMR) | World-grounded human motion recovery from video | Research/non-profit terms | Optional external frontend evaluation only; video pose recovery stays out of OHMC core. |
 | [ros2_control](https://github.com/ros-controls/ros2_control) | Standard ROS 2 hardware/control framework | Apache-2.0 | Any future live adapter must integrate through standard ROS 2 control boundaries instead of inventing a transport stack. |
 | [AgiBot X2 URDF](https://github.com/AgibotTech/agibot_x2_urdf) | Official X2 v1.3/v1.4 robot descriptions | MulanPSL-2.0 | Adopted as a pinned Git dependency at `77f43eb...`; the former copied ZIP workflow is retired for the model. |
+| [Isaac Lab](https://github.com/isaac-sim/IsaacLab) | Parallel robot learning, terrain, cameras, domain randomization and simulator integration | BSD-3-Clause | Adopt the pinned v3 beta external-task API for X2 PPO; keep OHMC responsible for recipes, state, evidence and safety boundaries. |
+| [RSL-RL](https://github.com/leggedrobotics/rsl_rl) | Maintained GPU PPO runners with asymmetric observation groups and CNN policies | BSD-3-Clause | Adopt pinned 5.0.1 through Isaac Lab; do not implement another PPO library. |
+| [LinkCraft](https://linkcraft.agibot.com/) | Official fast video/BVH-to-device action resource workflow | Official hosted service | Keep independent; provide a link and evidence record only, never reproduce or bypass official device control. |
 
 Licenses in this table are a project-maintainer screening record, not legal
 advice. Every revision update must re-check the upstream license and notices.
